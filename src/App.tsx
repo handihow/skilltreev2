@@ -19,11 +19,15 @@ import { organizationCollection } from "./collections/organization_collection";
 import { firebaseConfig } from "./firebase_config";
 import { skillsCollection } from "./collections/skill_collection";
 import { MySkillTreesView } from "./custom_views/MySkillTrees";
+import { SkillTreeViewer } from "./custom_views/SkillTreeViewer";
 import { IconButton, Tooltip } from "@mui/material";
 import { GitHub } from "@mui/icons-material";
 
-
-
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { fab } from '@fortawesome/free-brands-svg-icons'
+library.add(fas)
+library.add(fab)
 
 const customViews: CMSView[] = [
     {
@@ -41,6 +45,13 @@ const customViews: CMSView[] = [
         description: "SkillTrees shared with you",
         view: <MySkillTreesView view={"shared"} />,
         icon: "Share"
+    },
+    {
+        path: "compositions/:id/viewer",
+        name: "SkillTree Viewer",
+        hideFromNavigation: true,
+        description: "SkillTree Viewer",
+        view: <SkillTreeViewer />
     }
 ];
 
@@ -65,12 +76,12 @@ export default function App() {
         authController
     }) => {
 
-        if (!user?.email?.includes("handihow")) {
-            throw Error("No access!");
-        }
+        // if (!user?.email?.includes("flanders")) {
+        //     throw Error("No access!");
+        // }
 
         console.log("Allowing access to", user?.email);
-        const userRolesRef = collection(db, 'users/' + user.uid + '/roles')
+        const userRolesRef = collection(db, 'users/' + user?.uid + '/roles')
         // This is an example of retrieving async data related to the user
         // and storing it in the user extra field.
         const sampleUserRolesSnap = await getDocs(userRolesRef);

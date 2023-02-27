@@ -1,0 +1,66 @@
+{
+  "name": "beautiful-skill-tree",
+  "version": "1.7.2",
+  "homepage": "https://github.com/andrico1234/beautiful-skill-tree",
+  "repository": "andrico1234/beautiful-skill-tree",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "analyze": "yarn build && source-map-explorer ./dist/*.js",
+    "release": "yarn build && npm publish",
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "echo 'removed default test' ",
+    "alt-test": "tsdx test --env=jsdom",
+    "test:watch": "tsdx test --env=jsdom --watchAll",
+    "test:ci": "yarn alt-test --coverage --no-watch --watch=false --watchAll=false --no-watchman --forceExit --detectOpenHandles",
+    "pre-commit": "pretty-quick --staged && yarn test:ci && yarn build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "styled-components": ">=5"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn pre-commit"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "jest": {
+    "setupFilesAfterEnv": [
+      "<rootDir>src/setupTests.ts"
+    ],
+    "moduleNameMapper": {
+      "\\.(css|less)$": "identity-obj-proxy",
+      ".+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/src/__mocks__/file-mock.js"
+    },
+    "testMatch": [
+      "<rootDir>src/**/__tests__/*.{ts,tsx}"
+    ],
+    "collectCoverageFrom": [
+      "./src/App.tsx",
+      "./src/components/**/*.{ts,tsx}",
+      "./src/context/**/*.${ts,tsx}",
+      "./src/helpers/**/*.${ts,tsx}"
+    ]
+  },
+  "dependencies": {
+    "@tippyjs/react": "^4.2.6",
+    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
+    "styled-components": "^5.3.6",
+    "uuid": "^9.0.0"
+  },
+  "yalcSig": "c15c0a6d38af746f5bd450cc75ca4309"
+}

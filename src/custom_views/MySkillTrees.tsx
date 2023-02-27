@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Box,
     Button,
@@ -14,16 +14,20 @@ import {
 
 import {
     useAuthController,
-    useReferenceDialog,
     useSideEntityController,
     useSnackbarController,
-    useStorageSource
+    useStorageSource,
 } from "firecms";
+
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../services/firestore";
 
 import { simpleCompositionsCollection, IComposition } from "../collections/composition_collection";
 import { db } from "../services/firestore"
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { collection, getDocs, orderBy, query, where, Timestamp, addDoc, setDoc } from "firebase/firestore";
 import AlertDialog from "./AlertDialog";
+import { useNavigate } from "react-router-dom";
+import { standardChildSkills, standardRootSkill } from "../common/StandardData";
 
 /**
  * Sample CMS view not bound to a collection, customizable by the developer
@@ -33,6 +37,10 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
 
     // hook to display custom snackbars
     const snackbarController = useSnackbarController();
+    const navigate = useNavigate();
+    const viewSkillTree = (id: string) => {
+        navigate("/compositions/" + id + '/viewer');
+    }
 
     // hook to open the side dialog that shows the entity forms
     const sideEntityController = useSideEntityController();
@@ -47,7 +55,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
 
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
+    const loadContent = () => {
         if (!authController.user) return;
         const skillTreeColRef = collection(db, 'compositions');
         let skillTreeQuery;
@@ -62,8 +70,14 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                 for (const value of values.docs) {
                     let composition: IComposition = { id: value.id, ...value.data() as IComposition };
                     if (composition.backgroundImage) {
-                        const config = await storageSource.getDownloadURL(composition.backgroundImage);
-                        composition.url = config.url
+                        const resized = composition.backgroundImage.split(".")[0] + "_500x500." + composition.backgroundImage.split(".")[1];
+                        try {
+                            const config = await storageSource.getDownloadURL(resized);
+                            composition.url = config.url
+                        } catch(e) {
+                            console.log(e);
+                            composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
+                        }
                     } else {
                         composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
                     }
@@ -77,21 +91,81 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                     type: "error",
                     message: "Could not retrieve your compositions: " + err.message
                 })
+                setIsLoading(false)
             });
-    })
-
-    const addComposition = () => {
-        console.log('Adding');
     }
 
-    const deleteComposition = (composition: IComposition) => {
-        console.log(composition)
-        window.alert("Are you sure you want to delete?")
+    useEffect(() => {
+        console.log('loading content')
+        loadContent();    
+    }, [])
+
+    const addComposition = async () => {
+        try {
+            const newComposition: IComposition = {
+                title: "My SkillTree",
+                user: authController.user?.uid || "",
+                username: authController.user?.email || "",
+                hasBackgroundImage: false,
+                canCopy: false,
+                loggedInUsersCanEdit: true,
+                loggedInUsersOnly: true,
+                skillcount: 3,
+                lastUpdate: Timestamp.now(),
+              };
+              const skillTreeColRef = collection(db, 'compositions');
+              const composition = await addDoc(skillTreeColRef, newComposition);
+              await setDoc(composition, {id: composition.id}, {merge: true});
+              const newSkilltree = {
+                  title: "Example skilltree",
+                  description: "More information about my skill tree",
+                  collapsible: true,
+                  order: 0,
+              };
+              const skilltreeColRef = collection(db, 'compositions', composition.id, 'skilltrees');
+              const skilltree = await addDoc(skilltreeColRef, newSkilltree);
+              await setDoc(skilltree, {id: skilltree.id}, {merge: true});
+              const newRootSkill = {
+                  skilltree: skilltree.id,
+                  composition: composition.id,
+                  ...standardRootSkill
+              };
+              const rootSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills');
+              const rootSkill = await addDoc(rootSkillColRef, newRootSkill);
+              await setDoc(rootSkill, {id: rootSkill.id}, {merge: true})
+              const childSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills', rootSkill.id, 'skills');
+              for (const child of standardChildSkills) {
+                  const childSkill = await addDoc(childSkillColRef, {skilltree: skilltree.id, composition: composition.id, ...child});
+                  await setDoc(childSkill, {id: childSkill.id}, {merge: true})
+              }
+              setIsLoading(true);
+              loadContent();
+        } catch(err) {
+            snackbarController.open({
+                type: "error",
+                message: "Could not add skilltree: " + err
+            })
+            setIsLoading(false)
+        }
+      };
+
+    const deleteComposition = async (id: string) => {
+        console.log('executing with id '+id)
+        setIsLoading(true);
+        const path = `compositions/${id}`;
+        const deleteFirestorePathRecursively = httpsCallable(
+          functions,
+          "deleteFirestorePathRecursively"
+        );
+        await deleteFirestorePathRecursively({
+          collection: "Skilltree",
+          path: path,
+        });
+        loadContent();
     }
 
     return (
         <Box
-            display="flex"
             width={"100%"}
             height={"100%"}>
 
@@ -109,7 +183,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                     {isLoading ? <CircularProgress /> :
 
                         <Grid container rowSpacing={5} columnSpacing={2}>
-                            {view === "owned" && <Grid item xs={12} sm={4} key={"add"}>
+                            {view === "owned" && <Grid item xs={12} sm={4} >
                                 <Card variant="outlined" sx={{ height: "100%", cursor: 'pointer' }} onClick={() => addComposition()}>
                                     <CardMedia
                                         component="img"
@@ -129,6 +203,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                     </CardActions>
                                 </Card>
                             </Grid>}
+                            
                             {compositionsList.map(composition => (
                                 <Grid item xs={12} sm={4} key={composition.id}>
                                     <Card variant="outlined" sx={{ height: "100%" }}>
@@ -147,9 +222,10 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                             {view === "owned" && <Button>
                                                 Editor
                                             </Button>}
-                                            <Button>
+                                            <Button onClick={() => viewSkillTree(composition.id || '')}>
                                                 View
                                             </Button>
+                                            
                                             <Button
                                                 onClick={() => sideEntityController.open({
                                                     entityId: composition.id,
@@ -160,7 +236,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                                 color="primary">
                                                 Edit
                                             </Button>
-                                            <AlertDialog />
+                                            <AlertDialog deleteFunc={deleteComposition} id={composition?.id || ""} />
                                         </CardActions>
                                     </Card>
                                 </Grid>

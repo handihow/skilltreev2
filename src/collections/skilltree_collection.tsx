@@ -3,7 +3,8 @@ import {
 } from "firecms";
 import { skillsCollectionWithSubcollections } from "./skill_collection";
 
-type ISkilltree = {
+export type ISkilltree = {
+    id?: string
     title: string;
     description: string;
     collapsible: boolean;
@@ -26,10 +27,10 @@ export const skilltreesCollection = buildCollection<ISkilltree>({
     singularName: "Skilltree",
     path: "skilltrees",
     permissions: ({ authController }) => ({
-        edit: false,
-        create: false,
+        edit: authController.extra?.includes("super"),
+        create: authController.extra?.includes("super"),
         // we have created the roles object in the navigation builder
-        delete: false
+        delete: authController.extra?.includes("super")
     }),
     subcollections: [
         skillsCollectionWithSubcollections

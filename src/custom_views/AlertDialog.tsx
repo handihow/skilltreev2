@@ -1,59 +1,60 @@
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
-import React from "react";
+import { useState } from "react";
 
-class AlertDialog extends React.Component {
-  state = {
-    open: false
+
+export function AlertDialog({ deleteFunc, id }: { deleteFunc: Function, id: string }) {
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleClickOpen = () => {
+    setIsOpen(true)
   };
 
-  handleClickOpen = () => {
-    this.setState({ open: true });
+  const handleClose = () => {
+    setIsOpen(false)
   };
 
-  handleClose = () => {
-    this.setState({ open: false });
+  const handleAgree = () => {
+    console.log('deleting composition with id: ' + id);
+    deleteFunc(id);
+    handleClose();
   };
-
-  handleAgree = () => {
-    console.log("I agree!");
-    this.handleClose();
-  };
-  handleDisagree = () => {
+  
+  const handleDisagree = () => {
     console.log("I do not agree.");
-    this.handleClose();
+    handleClose();
   };
-  render() {
     return (
       <div>
         {/* Button to trigger the opening of the dialog */}
-        <Button onClick={this.handleClickOpen}>Delete</Button>
+        <Button onClick={handleClickOpen}>Delete</Button>
         {/* Dialog that is displayed if the state open is true */}
         <Dialog
-          open={this.state.open}
-          onClose={this.handleClose}
+          open={isOpen}
+          onClose={handleClose}
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
         >
           <DialogTitle id="alert-dialog-title">
-            {"Successful Alert"}
+            {"Warning"}
           </DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              You are successful in life!
+              Are you sure you want to delete?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={this.handleDisagree} color="primary">
-              Disagree
+            <Button onClick={handleDisagree} color="primary">
+              Cancel
             </Button>
-            <Button onClick={this.handleAgree} color="primary" autoFocus>
-              Agree
+            <Button onClick={handleAgree} color="warning" autoFocus>
+              Yes, delete!
             </Button>
           </DialogActions>
         </Dialog>
       </div>
     );
-  }
+
 }
 
 export default AlertDialog;

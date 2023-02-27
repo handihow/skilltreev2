@@ -16,7 +16,8 @@ type ILink = {
     filename?: string;
 }
 
-type ISkill = {
+export type ISkill = {
+    id?: string;
     composition?: string;        //references the composition ID
     skilltree?: string;          //references the skilltree ID
     title: string;
@@ -30,7 +31,7 @@ type ISkill = {
     category?: string;
     reference?: string;
     //properties to track the parent and path
-    parent?: string[];
+    parent?: any;
     path?: string;
     hierarchy?: number;
     //properties to assist in loading into skilltree
@@ -60,10 +61,10 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
         subcollections,
         icon: "FormatListBulleted",
         permissions: ({ authController }) => ({
-            edit: false,
-            create: false,
+            edit: authController.extra?.includes("super"),
+            create: authController.extra?.includes("super"),
             // we have created the roles object in the navigation builder
-            delete: false
+            delete: authController.extra?.includes("super")
         }),
         properties: {
             title: {

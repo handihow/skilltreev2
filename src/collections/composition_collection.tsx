@@ -1,12 +1,13 @@
 
 import {
     buildCollection,
-    buildProperty,
-    EntityCollection
+    EntityCollection,
+    EntityCustomView
 } from "firecms";
 import { SkillThemeType } from "beautiful-skill-tree";
 import { DocumentReference } from "firebase/firestore";
 import { skilltreesCollection } from "./skilltree_collection";
+import { SkillTreeEntityViewer } from "../custom_entity_views/SkillTreeEntityViewer";
 
 export type IComposition = {
     id?: string;
@@ -27,6 +28,12 @@ export type IComposition = {
     url?: string;
 }
 
+const skillTreeViewer: EntityCustomView = {
+    path: "viewer",
+    name: "SkillTree viewer",
+    builder: (props) => <SkillTreeEntityViewer {...props}/>
+};
+
 function buildCompositionsCollection(simple: boolean): EntityCollection<IComposition> {
     const subcollections = simple ? [] :[
         skilltreesCollection,
@@ -37,11 +44,14 @@ function buildCompositionsCollection(simple: boolean): EntityCollection<IComposi
         singularName: "Composition",
         path: "compositions",
         group: "Content",
+        views: simple ? [] : [
+            skillTreeViewer
+        ],
         permissions: ({ authController }) => ({
-            edit: simple,
-            create: simple,
+            edit: simple || authController.extra?.includes("super"),
+            create: simple || authController.extra?.includes("super"),
             // we have created the roles object in the navigation builder
-            delete: simple
+            delete: simple || authController.extra?.includes("super")
         }),
         subcollections,
         icon: "AccountTree",
