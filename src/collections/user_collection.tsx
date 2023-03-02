@@ -23,7 +23,7 @@ const rolesCollection = buildCollection({
     }
 });
 
-type IUser = {
+export type IUser = {
     email: string;
     displayName: string;
     photoURL?: string;

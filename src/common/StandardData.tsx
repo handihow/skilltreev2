@@ -1,407 +1,559 @@
 import { ISkill } from '../collections/skill_collection';
 import { ISkilltree } from '../collections/skilltree_collection';
+import { buildEnumValueConfig, ChipColorKey, EnumValueConfig } from 'firecms';
 
-export const standardTheme  = {
-    backgroundColor: 'transparent',
-    border: '2px solid white',
-    borderRadius: '4px',
-    primaryFont: 'Nunito',
-    primaryFontColor: 'white',
-    treeBackgroundColor: 'rgba(0, 0, 0, .6)',
-    headingFont: `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif`,
-    headingFontColor: 'white',
-    headingFontSize: '24px',
-    headingHoverColor: 'rgba(0, 0, 0, .6)',
-    headingHoverColorTransition: 'background 0.3s ease-out',
-    tooltipBackgroundColor: 'white',
-    tooltipFontColor: '#16181c',
-    tooltipZIndex: 99999,
-    nodeBackgroundColor: '#282c34',
-    nodeBorderColor: 'white',
-    nodeAlternativeFontColor: 'white',
-    nodeAltenativeActiveFontColor: 'white',
-    nodeOverlayColor: 'white',
-    nodeAlternativeActiveBackgroundColor: `
+export const standardTheme = {
+  backgroundColor: 'transparent',
+  border: '2px solid white',
+  borderRadius: '4px',
+  primaryFont: 'Nunito',
+  primaryFontColor: 'white',
+  treeBackgroundColor: 'rgba(0, 0, 0, .6)',
+  headingFont: `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif`,
+  headingFontColor: 'white',
+  headingFontSize: '24px',
+  headingHoverColor: 'rgba(0, 0, 0, .6)',
+  headingHoverColorTransition: 'background 0.3s ease-out',
+  tooltipBackgroundColor: 'white',
+  tooltipFontColor: '#16181c',
+  tooltipZIndex: 99999,
+  nodeBackgroundColor: '#282c34',
+  nodeBorderColor: 'white',
+  nodeAlternativeFontColor: 'white',
+  nodeAltenativeActiveFontColor: 'white',
+  nodeOverlayColor: 'white',
+  nodeAlternativeActiveBackgroundColor: `
     linear-gradient(
       to right,
       #b9e562 0%,
       #41e2bd 50%,
       #c284d8 100%
     )`,
-    nodeActiveBackgroundColor: `linear-gradient(
+  nodeActiveBackgroundColor: `linear-gradient(
         to right,
         #b9e562 0%,
         #41e2bd 50%,
         #c284d8 100%
       )`,
-    nodeHoverBorder: '4px solid',
-    nodeHoverBorderColor: `linear-gradient(
+  nodeHoverBorder: '4px solid',
+  nodeHoverBorderColor: `linear-gradient(
         to right,
         #b9e562 0%,
         #41e2bd 50%,
         #c284d8 100%
       )`,
-    nodeIconWidth: '64px',
-    nodeMobileTextNodeHeight: '32px',
-    nodeMobileTextNodeWidth: '108px',
-    nodeMobileFontSize: '14px',
-    nodeDesktopTextNodeHeight: '28px',
-    nodeDesktopTextNodeWidth: '144px',
-    nodeDesktopFontSize: '16px',
-    edgeBorder: '1px solid white',
-  }
+  nodeIconWidth: '64px',
+  nodeMobileTextNodeHeight: '32px',
+  nodeMobileTextNodeWidth: '108px',
+  nodeMobileFontSize: '14px',
+  nodeDesktopTextNodeHeight: '28px',
+  nodeDesktopTextNodeWidth: '144px',
+  nodeDesktopFontSize: '16px',
+  edgeBorder: '1px solid white',
+}
 
 export const standardData = [
-    {
-      id: 'hello-world',
-      title: 'Hello World',
-      tooltip: {
-        description:
-          'This node is the top most level, and will be unlocked, and ready to be clicked.',
-        links: []
-      },
-      children: [
-        {
-          id: 'hello-sun',
-          title: 'Hello Sun',
-          tooltip: {
-            description:
-              'This is a child of the top node, and will be locked while the parent isn’t in a selected state.',
-            links: [{
-                id: 0,
-                reference: 'https://youtube.com', 
-                title: 'Link to YouYube', 
-                iconName: 'youtube-square',
-                iconPrefix: 'fab'
-            }]
-          },
-          children: [],
-        },
-        {
-          id: 'hello-stars',
-          title: 'Hello Stars',
-          tooltip: {
-            description:
-              'This is the child of ‘Hello World and the sibling of ‘Hello Sun’. Notice how the app takes care of the layout automatically?',
-            links: []
-          },
-          children: [],
-        },
-      ],
+  {
+    id: 'hello-world',
+    title: 'Hello World',
+    tooltip: {
+      description:
+        'This node is the top most level, and will be unlocked, and ready to be clicked.',
+      links: []
     },
-  ];
+    children: [
+      {
+        id: 'hello-sun',
+        title: 'Hello Sun',
+        tooltip: {
+          description:
+            'This is a child of the top node, and will be locked while the parent isn’t in a selected state.',
+          links: [{
+            id: 0,
+            reference: 'https://youtube.com',
+            title: 'Link to YouYube',
+            iconName: 'youtube-square',
+            iconPrefix: 'fab'
+          }]
+        },
+        children: [],
+      },
+      {
+        id: 'hello-stars',
+        title: 'Hello Stars',
+        tooltip: {
+          description:
+            'This is the child of ‘Hello World and the sibling of ‘Hello Sun’. Notice how the app takes care of the layout automatically?',
+          links: []
+        },
+        children: [],
+      },
+    ],
+  },
+];
 
-  export const standardEmptySkill : ISkill = {
-    title: '',
-    description: '',
+export const standardEmptySkill: ISkill = {
+  title: '',
+  description: '',
+  order: 0,
+  links: [],
+  optional: false,
+  direction: 'top',
+  countChildren: 0
+}
+
+export const standardRootSkill: ISkill = {
+  title: 'Hello World',
+  description: 'This node is the top most level, and will be unlocked, and ready to be clicked.',
+  order: 0,
+  links: [],
+  optional: false,
+  direction: 'top',
+  countChildren: 2
+}
+
+export const standardChildSkills: ISkill[] = [
+  {
+    title: 'Hello Sun',
+    description:
+      'This is a child of the top node, and will be locked while the parent isn’t in a selected state.',
     order: 0,
-    links: [],
     optional: false,
     direction: 'top',
     countChildren: 0
-  } 
-
-  export const standardRootSkill : ISkill = {
-    title: 'Hello World',
-    description: 'This node is the top most level, and will be unlocked, and ready to be clicked.',
-    order: 0,
+  },
+  {
+    title: 'Hello Stars',
+    description:
+      'This is the child of Hello World and the sibling of Hello Sun. Notice how the app takes care of the layout automatically?',
     links: [],
+    order: 1,
     optional: false,
     direction: 'top',
-    countChildren: 2
-  } 
-  
-  export const standardChildSkills: ISkill[] = [
-    {
-      title: 'Hello Sun',
-      description:
-          'This is a child of the top node, and will be locked while the parent isn’t in a selected state.',
-      order: 0,
-      optional: false,
-      direction: 'top',
-      countChildren: 0
-    },
-    {
-      title: 'Hello Stars',
-      description:
-          'This is the child of Hello World and the sibling of Hello Sun. Notice how the app takes care of the layout automatically?',
-      links: [],
-      order: 1,
-      optional: false,
-      direction: 'top',
-      countChildren: 0
-    }
-  ];
-
-  export const linkIcons = {
-    'youtube': 
-      {
-        icon: 'youtube-square',
-        iconLibrary: 'fab'
-      },
-    'link': {
-        icon: 'link',
-        iconLibrary: 'fas'
-    },
-    'file': {
-        icon: 'file',
-        iconLibrary: 'fas'
-    }
+    countChildren: 0
   }
+];
 
-  export const standardSkilltree : ISkilltree = {
-    collapsible: true,
-    data: standardData,
-    description: "More information about my skill tree",
-    id: 'default-skilltree',
-    title: 'Example',
-    order: 0,
+export const linkIcons = {
+  'youtube':
+  {
+    icon: 'youtube-square',
+    iconLibrary: 'fab'
+  },
+  'link': {
+    icon: 'link',
+    iconLibrary: 'fas'
+  },
+  'file': {
+    icon: 'file',
+    iconLibrary: 'fas'
   }
+}
 
-  const cssColors = [
-    "AliceBlue",
-    "AntiqueWhite",
-    "Aqua",
-    "Aquamarine",
-    "Azure",
-    "Beige",
-    "Bisque",
-    "Black",
-    "BlanchedAlmond",
-    "Blue",
-    "BlueViolet",
-    "Brown",
-    "BurlyWood",
-    "CadetBlue",
-    "Chartreuse",
-    "Chocolate",
-    "Coral",
-    "CornflowerBlue",
-    "Cornsilk",
-    "Crimson",
-    "Cyan",
-    "DarkBlue",
-    "DarkCyan",
-    "DarkGoldenRod",
-    "DarkGray",
-    "DarkGrey",
-    "DarkGreen",
-    "DarkKhaki",
-    "DarkMagenta",
-    "DarkOliveGreen",
-    "DarkOrange",
-    "DarkOrchid",
-    "DarkRed",
-    "DarkSalmon",
-    "DarkSeaGreen",
-    "DarkSlateBlue",
-    "DarkSlateGray",
-    "DarkSlateGrey",
-    "DarkTurquoise",
-    "DarkViolet",
-    "DeepPink",
-    "DeepSkyBlue",
-    "DimGray",
-    "DimGrey",
-    "DodgerBlue",
-    "FireBrick",
-    "FloralWhite",
-    "ForestGreen",
-    "Fuchsia",
-    "Gainsboro",
-    "GhostWhite",
-    "Gold",
-    "GoldenRod",
-    "Gray",
-    "Grey",
-    "Green",
-    "GreenYellow",
-    "HoneyDew",
-    "HotPink",
-    "IndianRed",
-    "Indigo",
-    "Ivory",
-    "Khaki",
-    "Lavender",
-    "LavenderBlush",
-    "LawnGreen",
-    "LemonChiffon",
-    "LightBlue",
-    "LightCoral",
-    "LightCyan",
-    "LightGoldenRodYellow",
-    "LightGray",
-    "LightGrey",
-    "LightGreen",
-    "LightPink",
-    "LightSalmon",
-    "LightSeaGreen",
-    "LightSkyBlue",
-    "LightSlateGray",
-    "LightSlateGrey",
-    "LightSteelBlue",
-    "LightYellow",
-    "Lime",
-    "LimeGreen",
-    "Linen",
-    "Magenta",
-    "Maroon",
-    "MediumAquaMarine",
-    "MediumBlue",
-    "MediumOrchid",
-    "MediumPurple",
-    "MediumSeaGreen",
-    "MediumSlateBlue",
-    "MediumSpringGreen",
-    "MediumTurquoise",
-    "MediumVioletRed",
-    "MidnightBlue",
-    "MintCream",
-    "MistyRose",
-    "Moccasin",
-    "NavajoWhite",
-    "Navy",
-    "OldLace",
-    "Olive",
-    "OliveDrab",
-    "Orange",
-    "OrangeRed",
-    "Orchid",
-    "PaleGoldenRod",
-    "PaleGreen",
-    "PaleTurquoise",
-    "PaleVioletRed",
-    "PapayaWhip",
-    "PeachPuff",
-    "Peru",
-    "Pink",
-    "Plum",
-    "PowderBlue",
-    "Purple",
-    "RebeccaPurple",
-    "Red",
-    "RosyBrown",
-    "RoyalBlue",
-    "SaddleBrown",
-    "Salmon",
-    "SandyBrown",
-    "SeaGreen",
-    "SeaShell",
-    "Sienna",
-    "Silver",
-    "SkyBlue",
-    "SlateBlue",
-    "SlateGray",
-    "SlateGrey",
-    "Snow",
-    "SpringGreen",
-    "SteelBlue",
-    "Tan",
-    "Teal",
-    "Thistle",
-    "Tomato",
-    "Turquoise",
-    "Violet",
-    "Wheat",
-    "White",
-    "WhiteSmoke",
-    "Yellow",
-    "YellowGreen",
-  ]
-const colors : any[] = []; 
-cssColors.forEach(color => {
-    colors.push({value: color.toLocaleLowerCase(), title: color})
-});
+export const standardSkilltree: ISkilltree = {
+  collapsible: true,
+  data: standardData,
+  description: "More information about my skill tree",
+  id: 'default-skilltree',
+  title: 'Example',
+  order: 0,
+}
 
-export const allColors = colors;
+const cssColors = [
+  "transparent",
+  "AliceBlue",
+  "AntiqueWhite",
+  "Aqua",
+  "Aquamarine",
+  "Azure",
+  "Beige",
+  "Bisque",
+  "Black",
+  "BlanchedAlmond",
+  "Blue",
+  "BlueViolet",
+  "Brown",
+  "BurlyWood",
+  "CadetBlue",
+  "Chartreuse",
+  "Chocolate",
+  "Coral",
+  "CornflowerBlue",
+  "Cornsilk",
+  "Crimson",
+  "Cyan",
+  "DarkBlue",
+  "DarkCyan",
+  "DarkGoldenRod",
+  "DarkGray",
+  "DarkGrey",
+  "DarkGreen",
+  "DarkKhaki",
+  "DarkMagenta",
+  "DarkOliveGreen",
+  "DarkOrange",
+  "DarkOrchid",
+  "DarkRed",
+  "DarkSalmon",
+  "DarkSeaGreen",
+  "DarkSlateBlue",
+  "DarkSlateGray",
+  "DarkSlateGrey",
+  "DarkTurquoise",
+  "DarkViolet",
+  "DeepPink",
+  "DeepSkyBlue",
+  "DimGray",
+  "DimGrey",
+  "DodgerBlue",
+  "FireBrick",
+  "FloralWhite",
+  "ForestGreen",
+  "Fuchsia",
+  "Gainsboro",
+  "GhostWhite",
+  "Gold",
+  "GoldenRod",
+  "Gray",
+  "Grey",
+  "Green",
+  "GreenYellow",
+  "HoneyDew",
+  "HotPink",
+  "IndianRed",
+  "Indigo",
+  "Ivory",
+  "Khaki",
+  "Lavender",
+  "LavenderBlush",
+  "LawnGreen",
+  "LemonChiffon",
+  "LightBlue",
+  "LightCoral",
+  "LightCyan",
+  "LightGoldenRodYellow",
+  "LightGray",
+  "LightGrey",
+  "LightGreen",
+  "LightPink",
+  "LightSalmon",
+  "LightSeaGreen",
+  "LightSkyBlue",
+  "LightSlateGray",
+  "LightSlateGrey",
+  "LightSteelBlue",
+  "LightYellow",
+  "Lime",
+  "LimeGreen",
+  "Linen",
+  "Magenta",
+  "Maroon",
+  "MediumAquaMarine",
+  "MediumBlue",
+  "MediumOrchid",
+  "MediumPurple",
+  "MediumSeaGreen",
+  "MediumSlateBlue",
+  "MediumSpringGreen",
+  "MediumTurquoise",
+  "MediumVioletRed",
+  "MidnightBlue",
+  "MintCream",
+  "MistyRose",
+  "Moccasin",
+  "NavajoWhite",
+  "Navy",
+  "OldLace",
+  "Olive",
+  "OliveDrab",
+  "Orange",
+  "OrangeRed",
+  "Orchid",
+  "PaleGoldenRod",
+  "PaleGreen",
+  "PaleTurquoise",
+  "PaleVioletRed",
+  "PapayaWhip",
+  "PeachPuff",
+  "Peru",
+  "Pink",
+  "Plum",
+  "PowderBlue",
+  "Purple",
+  "RebeccaPurple",
+  "Red",
+  "RosyBrown",
+  "RoyalBlue",
+  "SaddleBrown",
+  "Salmon",
+  "SandyBrown",
+  "SeaGreen",
+  "SeaShell",
+  "Sienna",
+  "Silver",
+  "SkyBlue",
+  "SlateBlue",
+  "SlateGray",
+  "SlateGrey",
+  "Snow",
+  "SpringGreen",
+  "SteelBlue",
+  "Tan",
+  "Teal",
+  "Thistle",
+  "Tomato",
+  "Turquoise",
+  "Violet",
+  "Wheat",
+  "white",
+  "WhiteSmoke",
+  "Yellow",
+  "YellowGreen",
+]
 
-export const gradients = [{value: "linear-gradient(to right, #59c173, #a17fe0, #5d26c1)", title:"Magic"},
-        {value: "linear-gradient(to right, #b9e562 0%, #41e2bd 50%, #c284d8 100%)", title: "Rainbow"},
-        {value: "linear-gradient(to right, #a8c0ff, #3f2b96)", title: "Ocean View"},
-        {value: "linear-gradient(to right, #333333, #dd1818)", title: "Pure Lust"},
-        {value: "linear-gradient(to right, #4e54c8, #8f94fb)", title: "Moon Purple"},
-        {value: "linear-gradient(to right, #355c7d, #6c5b7b, #c06c84)", title:"Red Sunset"},
-        {value: "linear-gradient(to right, #40e0d0, #ff8c00, #ff0080)", title: "Wedding Day Blues"},
-        {value: "linear-gradient(to right, #3e5151, #decba4)", title: "Sand to Blue"},
-        {value: "linear-gradient(to right, #283048, #859398)", title: "Titanium"},
-        {value: "linear-gradient(to right, #232526, #414345)", title: "Midnight City"},
-        {value: "linear-gradient(to right, #ff512f, #dd2476)", title: "Bloody Mary"}];
+const cssColorsHex = [
+  'transparent',
+  '#f0f8ff',
+  '#faebd7',
+  '#00ffff',
+  '#7fffd4',
+  '#f0ffff',
+  '#f5f5dc',
+  '#ffe4c4',
+  '#000000',
+  '#ffebcd',
+  '#0000ff',
+  '#8a2be2',
+  '#a52a2a',
+  '#deb887',
+  '#5f9ea0',
+  '#7fff00',
+  '#d2691e',
+  '#ff7f50',
+  '#6495ed',
+  '#fff8dc',
+  '#dc143c',
+  '#00ffff',
+  '#00008b',
+  '#008b8b',
+  '#b8860b',
+  '#a9a9a9',
+  '#006400',
+  '#a9a9a9',
+  '#bdb76b',
+  '#8b008b',
+  '#556b2f',
+  '#ff8c00',
+  '#9932cc',
+  '#8b0000',
+  '#e9967a',
+  '#8fbc8f',
+  '#483d8b',
+  '#2f4f4f',
+  '#2f4f4f',
+  '#00ced1',
+  '#9400d3',
+  '#ff1493',
+  '#00bfff',
+  '#696969',
+  '#696969',
+  '#1e90ff',
+  '#b22222',
+  '#fffaf0',
+  '#228b22',
+  '#ff00ff',
+  '#dcdcdc',
+  '#f8f8ff',
+  '#ffd700',
+  '#daa520',
+  '#808080',
+  '#008000',
+  '#adff2f',
+  '#808080',
+  '#f0fff0',
+  '#ff69b4',
+  '#cd5c5c',
+  '#4b0082',
+  '#fffff0',
+  '#f0e68c',
+  '#e6e6fa',
+  '#fff0f5',
+  '#7cfc00',
+  '#fffacd',
+  '#add8e6',
+  '#f08080',
+  '#e0ffff',
+  '#fafad2',
+  '#d3d3d3',
+  '#90ee90',
+  '#d3d3d3',
+  '#ffb6c1',
+  '#ffa07a',
+  '#20b2aa',
+  '#87cefa',
+  '#778899',
+  '#778899',
+  '#b0c4de',
+  '#ffffe0',
+  '#00ff00',
+  '#32cd32',
+  '#faf0e6',
+  '#ff00ff',
+  '#800000',
+  '#66cdaa',
+  '#0000cd',
+  '#ba55d3',
+  '#9370db',
+  '#3cb371',
+  '#7b68ee',
+  '#00fa9a',
+  '#48d1cc',
+  '#c71585',
+  '#191970',
+  '#f5fffa',
+  '#ffe4e1',
+  '#ffe4b5',
+  '#ffdead',
+  '#000080',
+  '#fdf5e6',
+  '#808000',
+  '#6b8e23',
+  '#ffa500',
+  '#ff4500',
+  '#da70d6',
+  '#eee8aa',
+  '#98fb98',
+  '#afeeee',
+  '#db7093',
+  '#ffefd5',
+  '#ffdab9',
+  '#cd853f',
+  '#ffc0cb',
+  '#dda0dd',
+  '#b0e0e6',
+  '#800080',
+  '#ff0000',
+  '#bc8f8f',
+  '#4169e1',
+  '#8b4513',
+  '#fa8072',
+  '#f4a460',
+  '#2e8b57',
+  '#fff5ee',
+  '#a0522d',
+  '#c0c0c0',
+  '#87ceeb',
+  '#6a5acd',
+  '#708090',
+  '#708090',
+  '#fffafa',
+  '#00ff7f',
+  '#4682b4',
+  '#d2b48c',
+  '#008080',
+  '#d8bfd8',
+  '#ff6347',
+  '#40e0d0',
+  '#ee82ee',
+  '#f5deb3',
+  '#ffffff',
+  '#f5f5f5',
+  '#ffff00',
+  '#9acd32',
+];
 
-export const treebeardTheme =  {
+export const colors: EnumValueConfig[] = cssColors.map((color, index) => {
+  return buildEnumValueConfig({id: color, label: color, color: {color: cssColorsHex[index], text: "#333333"}});
+})
+
+export const gradients = [{ id: "linear-gradient(to right, #59c173, #a17fe0, #5d26c1)", label: "Magic" },
+{ id: "linear-gradient(to right, #b9e562 0%, #41e2bd 50%, #c284d8 100%)", label: "Rainbow" },
+{ id: "linear-gradient(to right, #a8c0ff, #3f2b96)", label: "Ocean View" },
+{ id: "linear-gradient(to right, #333333, #dd1818)", label: "Pure Lust" },
+{ id: "linear-gradient(to right, #4e54c8, #8f94fb)", label: "Moon Purple" },
+{ id: "linear-gradient(to right, #355c7d, #6c5b7b, #c06c84)", label: "Red Sunset" },
+{ id: "linear-gradient(to right, #40e0d0, #ff8c00, #ff0080)", label: "Wedding Day Blues" },
+{ id: "linear-gradient(to right, #3e5151, #decba4)", label: "Sand to Blue" },
+{ id: "linear-gradient(to right, #283048, #859398)", label: "Titanium" },
+{ id: "linear-gradient(to right, #232526, #414345)", label: "Midnight City" },
+{ id: "linear-gradient(to right, #ff512f, #dd2476)", label: "Bloody Mary" }];
+
+
+export const treebeardTheme = {
   tree: {
+    base: {
+      listStyle: 'none',
+      backgroundColor: 'white',
+      margin: 0,
+      padding: 0,
+      color: '0xFF',
+      fontFamily: 'nunito, lucida grande ,tahoma,verdana,arial,sans-serif',
+      fontSize: '16px'
+    },
+    node: {
       base: {
-          listStyle: 'none',
-          backgroundColor: 'white',
-          margin: 0,
-          padding: 0,
-          color: '0xFF',
-          fontFamily: 'nunito, lucida grande ,tahoma,verdana,arial,sans-serif',
-          fontSize: '16px'
+        position: 'relative'
       },
-      node: {
-          base: {
-              position: 'relative'
-          },
-          link: {
-              cursor: 'pointer',
-              position: 'relative',
-              padding: '0px 5px',
-              display: 'block'
-          },
-          activeLink: {
-              background: '#eff0eb'
-          },
-          toggle: {
-              base: {
-                  position: 'relative',
-                  display: 'inline-block',
-                  verticalAlign: 'top',
-                  marginLeft: '-5px',
-                  height: '24px',
-                  width: '24px'
-              },
-              wrapper: {
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  margin: '-7px 0 0 -7px',
-                  height: '14px'
-              },
-              height: 14,
-              width: 14,
-              arrow: {
-                  fill: '#fa7c91',
-                  strokeWidth: 0
-              }
-          },
-          header: {
-              base: {
-                  display: 'inline-block',
-                  verticalAlign: 'top',
-                  color: '#363a3d'
-              },
-              connector: {
-                  width: '2px',
-                  height: '12px',
-                  borderLeft: 'solid 2px black',
-                  borderBottom: 'solid 2px black',
-                  position: 'absolute',
-                  top: '0px',
-                  left: '-21px'
-              },
-              title: {
-                  lineHeight: '24px',
-                  verticalAlign: 'middle'
-              }
-          },
-          subtree: {
-              listStyle: 'none',
-              paddingLeft: '19px'
-          },
-          loading: {
-              color: '#E2C089'
-          }
+      link: {
+        cursor: 'pointer',
+        position: 'relative',
+        padding: '0px 5px',
+        display: 'block'
+      },
+      activeLink: {
+        background: '#eff0eb'
+      },
+      toggle: {
+        base: {
+          position: 'relative',
+          display: 'inline-block',
+          verticalAlign: 'top',
+          marginLeft: '-5px',
+          height: '24px',
+          width: '24px'
+        },
+        wrapper: {
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          margin: '-7px 0 0 -7px',
+          height: '14px'
+        },
+        height: 14,
+        width: 14,
+        arrow: {
+          fill: '#fa7c91',
+          strokeWidth: 0
+        }
+      },
+      header: {
+        base: {
+          display: 'inline-block',
+          verticalAlign: 'top',
+          color: '#363a3d'
+        },
+        connector: {
+          width: '2px',
+          height: '12px',
+          borderLeft: 'solid 2px black',
+          borderBottom: 'solid 2px black',
+          position: 'absolute',
+          top: '0px',
+          left: '-21px'
+        },
+        title: {
+          lineHeight: '24px',
+          verticalAlign: 'middle'
+        }
+      },
+      subtree: {
+        listStyle: 'none',
+        paddingLeft: '19px'
+      },
+      loading: {
+        color: '#E2C089'
       }
+    }
   }
 };
 
@@ -409,23 +561,23 @@ export const toolbarConfig = {
   // Optionally specify the groups to display (displayed in the order listed).
   display: ['INLINE_STYLE_BUTTONS', 'BLOCK_TYPE_BUTTONS', 'LINK_BUTTONS', 'BLOCK_TYPE_DROPDOWN', 'HISTORY_BUTTONS'],
   INLINE_STYLE_BUTTONS: [
-    {label: 'Bold', style: 'BOLD', className: 'custom-css-class'},
-    {label: 'Italic', style: 'ITALIC'},
-    {label: 'Underline', style: 'UNDERLINE'}
+    { label: 'Bold', style: 'BOLD', className: 'custom-css-class' },
+    { label: 'Italic', style: 'ITALIC' },
+    { label: 'Underline', style: 'UNDERLINE' }
   ],
   LINK_BUTTONS: [
-      {label: 'Link'},
-      {label: 'Unlink'}
-      ],
+    { label: 'Link' },
+    { label: 'Unlink' }
+  ],
   BLOCK_TYPE_DROPDOWN: [
-    {label: 'Normal', style: 'unstyled'},
-    {label: 'Heading Large', style: 'header-one'},
-    {label: 'Heading Medium', style: 'header-two'},
-    {label: 'Heading Small', style: 'header-three'}
+    { label: 'Normal', style: 'unstyled' },
+    { label: 'Heading Large', style: 'header-one' },
+    { label: 'Heading Medium', style: 'header-two' },
+    { label: 'Heading Small', style: 'header-three' }
   ],
   BLOCK_TYPE_BUTTONS: [
-    {label: 'UL', style: 'unordered-list-item'},
-    {label: 'OL', style: 'ordered-list-item'}
+    { label: 'UL', style: 'unordered-list-item' },
+    { label: 'OL', style: 'ordered-list-item' }
   ]
 };
 

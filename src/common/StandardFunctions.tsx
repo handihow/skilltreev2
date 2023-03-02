@@ -1,5 +1,17 @@
+import { SavedDataType } from "beautiful-skill-tree";
+import { ISkilltree } from "../collections/skilltree_collection";
 import { ISkill } from "../collections/skill_collection";
 import SkillContent from "./SkillContent";
+
+export const countSelectedSkills = (data: SavedDataType[]) => {
+    let count = 0;
+    for (const skilltreeResult of data) {
+        for (const key of Object.keys(skilltreeResult)) {
+            if(skilltreeResult[key].nodeState === 'selected') count++;
+        }
+    }
+    return count;
+}
 
 export const skillTreeToSkillArray = (skills: ISkill[], isViewing: boolean) => {
     const skillArray: ISkill[] = [];

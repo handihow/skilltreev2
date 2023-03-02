@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 
 import {
+    EntityCollection,
     useAuthController,
     useSideEntityController,
     useSnackbarController,
@@ -24,8 +25,8 @@ import { functions } from "../services/firestore";
 
 import { simpleCompositionsCollection, IComposition } from "../collections/composition_collection";
 import { db } from "../services/firestore"
-import { collection, getDocs, orderBy, query, where, Timestamp, addDoc, setDoc } from "firebase/firestore";
-import AlertDialog from "./AlertDialog";
+import { collection, getDocs, orderBy, query, where, Timestamp, addDoc, setDoc, arrayRemove, doc, updateDoc } from "firebase/firestore";
+import AlertDialog from "./widgets/AlertDialog";
 import { useNavigate } from "react-router-dom";
 import { standardChildSkills, standardRootSkill } from "../common/StandardData";
 
@@ -74,7 +75,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                         try {
                             const config = await storageSource.getDownloadURL(resized);
                             composition.url = config.url
-                        } catch(e) {
+                        } catch (e) {
                             console.log(e);
                             composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
                         }
@@ -97,7 +98,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
 
     useEffect(() => {
         console.log('loading content')
-        loadContent();    
+        loadContent();
     }, [])
 
     const addComposition = async () => {
@@ -112,55 +113,61 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                 loggedInUsersOnly: true,
                 skillcount: 3,
                 lastUpdate: Timestamp.now(),
-              };
-              const skillTreeColRef = collection(db, 'compositions');
-              const composition = await addDoc(skillTreeColRef, newComposition);
-              await setDoc(composition, {id: composition.id}, {merge: true});
-              const newSkilltree = {
-                  title: "Example skilltree",
-                  description: "More information about my skill tree",
-                  collapsible: true,
-                  order: 0,
-              };
-              const skilltreeColRef = collection(db, 'compositions', composition.id, 'skilltrees');
-              const skilltree = await addDoc(skilltreeColRef, newSkilltree);
-              await setDoc(skilltree, {id: skilltree.id}, {merge: true});
-              const newRootSkill = {
-                  skilltree: skilltree.id,
-                  composition: composition.id,
-                  ...standardRootSkill
-              };
-              const rootSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills');
-              const rootSkill = await addDoc(rootSkillColRef, newRootSkill);
-              await setDoc(rootSkill, {id: rootSkill.id}, {merge: true})
-              const childSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills', rootSkill.id, 'skills');
-              for (const child of standardChildSkills) {
-                  const childSkill = await addDoc(childSkillColRef, {skilltree: skilltree.id, composition: composition.id, ...child});
-                  await setDoc(childSkill, {id: childSkill.id}, {merge: true})
-              }
-              setIsLoading(true);
-              loadContent();
-        } catch(err) {
+            };
+            const skillTreeColRef = collection(db, 'compositions');
+            const composition = await addDoc(skillTreeColRef, newComposition);
+            await updateDoc(composition, { id: composition.id });
+            const newSkilltree = {
+                title: "Example skilltree",
+                description: "More information about my skill tree",
+                collapsible: true,
+                order: 0,
+            };
+            const skilltreeColRef = collection(db, 'compositions', composition.id, 'skilltrees');
+            const skilltree = await addDoc(skilltreeColRef, newSkilltree);
+            await updateDoc(skilltree, { id: skilltree.id });
+            const newRootSkill = {
+                skilltree: skilltree.id,
+                composition: composition.id,
+                ...standardRootSkill
+            };
+            const rootSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills');
+            const rootSkill = await addDoc(rootSkillColRef, newRootSkill);
+            await updateDoc(rootSkill, { id: rootSkill.id })
+            const childSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills', rootSkill.id, 'skills');
+            for (const child of standardChildSkills) {
+                const childSkill = await addDoc(childSkillColRef, { skilltree: skilltree.id, composition: composition.id, ...child });
+                await updateDoc(childSkill, { id: childSkill.id })
+            }
+            setIsLoading(true);
+            loadContent();
+        } catch (err) {
             snackbarController.open({
                 type: "error",
                 message: "Could not add skilltree: " + err
             })
             setIsLoading(false)
         }
-      };
+    };
 
     const deleteComposition = async (id: string) => {
-        console.log('executing with id '+id)
         setIsLoading(true);
         const path = `compositions/${id}`;
         const deleteFirestorePathRecursively = httpsCallable(
-          functions,
-          "deleteFirestorePathRecursively"
+            functions,
+            "deleteFirestorePathRecursively"
         );
         await deleteFirestorePathRecursively({
-          collection: "Skilltree",
-          path: path,
+            collection: "Skilltree",
+            path: path,
         });
+        loadContent();
+    }
+
+    const removeSharedComposition = async (id: string) => {
+        setIsLoading(true);
+        const docRef = doc(db, 'compositions', id);
+        await updateDoc(docRef, { sharedUsers: arrayRemove(authController.user?.uid) })
         loadContent();
     }
 
@@ -203,7 +210,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                     </CardActions>
                                 </Card>
                             </Grid>}
-                            
+
                             {compositionsList.map(composition => (
                                 <Grid item xs={12} sm={4} key={composition.id}>
                                     <Card variant="outlined" sx={{ height: "100%" }}>
@@ -225,8 +232,8 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                             <Button onClick={() => viewSkillTree(composition.id || '')}>
                                                 View
                                             </Button>
-                                            
-                                            <Button
+
+                                            {view === "owned" && <Button
                                                 onClick={() => sideEntityController.open({
                                                     entityId: composition.id,
                                                     path: "/compositions", // this path is not mapped in our collections
@@ -235,8 +242,8 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                                 })}
                                                 color="primary">
                                                 Edit
-                                            </Button>
-                                            <AlertDialog deleteFunc={deleteComposition} id={composition?.id || ""} />
+                                            </Button>}
+                                            <AlertDialog deleteFunc={view === "owned" ? deleteComposition : removeSharedComposition} id={composition?.id || ""} />
                                         </CardActions>
                                     </Card>
                                 </Grid>

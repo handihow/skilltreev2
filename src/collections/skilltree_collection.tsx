@@ -22,16 +22,21 @@ export type ISkilltree = {
     path?: string;
 }
 
+
 export const skilltreesCollection = buildCollection<ISkilltree>({
     name: "Skilltrees",
     singularName: "Skilltree",
     path: "skilltrees",
-    permissions: ({ authController }) => ({
-        edit: authController.extra?.includes("super"),
-        create: authController.extra?.includes("super"),
-        // we have created the roles object in the navigation builder
-        delete: authController.extra?.includes("super")
-    }),
+    initialSort: ["order", "asc"],
+    permissions: ({ authController }) => {
+        const isAdmin = authController.extra?.roles.includes("admin") || authController.extra?.roles.includes("super");
+        return ({
+            edit: isAdmin,
+            create: false,
+            // we have created the roles object in the navigation builder
+            delete: false
+        })
+    },
     subcollections: [
         skillsCollectionWithSubcollections
     ],

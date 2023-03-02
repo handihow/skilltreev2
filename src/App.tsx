@@ -1,15 +1,17 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 
 import { User as FirebaseUser } from "firebase/auth";
 import {
     Authenticator,
     CMSView,
+    EntityCollection,
     FirebaseCMSApp,
 } from "firecms";
 
 import { db } from "./services/firestore";
 import { getDocs, collection } from "firebase/firestore";
-
+import { loadFonts } from "./services/fonts";
+loadFonts();
 import "typeface-rubik";
 import "@fontsource/ibm-plex-mono";
 
@@ -71,6 +73,8 @@ export default function App() {
         </Tooltip>
     );
 
+    const [collections, setCollections] = useState<EntityCollection[]>([]);
+
     const myAuthenticator: Authenticator<FirebaseUser> = useCallback(async ({
         user,
         authController
@@ -94,7 +98,9 @@ export default function App() {
         });
         console.log(roles)
         authController.setExtra(roles);
-
+        if(roles.includes("super")) {
+            setCollections([compositionsCollection, usersCollection, organizationCollection, skillsCollection])
+        }
         return true;
     }, []);
 
@@ -102,7 +108,7 @@ export default function App() {
         name={"SkillTree"}
         authentication={myAuthenticator}
         views={customViews}
-        collections={({authController}) => authController.extra?.includes("super") ? [usersCollection, organizationCollection, compositionsCollection, skillsCollection] : []} 
+        collections={collections} 
         firebaseConfig={firebaseConfig}
         signInOptions={['google.com', 'microsoft.com', 'password']}
         toolbarExtraWidget={githubLink}

@@ -1,9 +1,8 @@
 import {
-    buildProperty, buildCollection, EntityCollection,
+    buildProperty, buildCollection, EntityCollection, buildEntityCallbacks,
 } from "firecms";
-import CustomImagePreview from '../custom_field_preview/ImagePreview';
 import CustomHTMLPreview from "../custom_field_preview/HTMLPreview";
-import { IconPrefix , IconName } from '@fortawesome/fontawesome-svg-core';
+import { IconPrefix, IconName } from '@fortawesome/fontawesome-svg-core';
 
 type ILink = {
     id: string;
@@ -21,13 +20,13 @@ export type ISkill = {
     composition?: string;        //references the composition ID
     skilltree?: string;          //references the skilltree ID
     title: string;
-    description?: string; 
-    icon?: string;       
+    description?: string;
+    icon?: string;
     links?: ILink[];
     order?: number;
     optional: boolean;
     direction?: string;
-    countChildren: number;
+    countChildren?: number;
     category?: string;
     reference?: string;
     //properties to track the parent and path
@@ -47,9 +46,28 @@ export type ISkill = {
     table?: string;
 }
 
-function skillsCollectionBuilder(level: number, hasSubcollections: boolean, description: string | undefined) : EntityCollection<ISkill> {
-    let subcollections : EntityCollection<ISkill>[] | undefined;
-    if(level < 5 && hasSubcollections) {
+
+const skillCallbacks = buildEntityCallbacks({
+    onPreSave: ({
+        collection,
+        path,
+        entityId,
+        values,
+        status
+    }) => {
+        // return the updated values
+        if (values.links && values.links.length > 0) {
+            values.links = values.links.map((l: any) => {
+                return { id: Math.floor(Math.random() * 10000), iconName: "link", iconPrefix: "fas", ...l }
+            })
+        }
+        return values;
+    },
+});
+
+function skillsCollectionBuilder(level: number, hasSubcollections: boolean, description: string | undefined): EntityCollection<ISkill> {
+    let subcollections: EntityCollection<ISkill>[] | undefined;
+    if (level < 5 && hasSubcollections) {
         subcollections = [skillsCollectionBuilder(level + 1, true, undefined)];
     }
     return buildCollection<ISkill>({
@@ -59,13 +77,17 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
         path: "skills",
         group: "Content",
         subcollections,
+        initialSort: ["order", "asc"],
         icon: "FormatListBulleted",
-        permissions: ({ authController }) => ({
-            edit: authController.extra?.includes("super"),
-            create: authController.extra?.includes("super"),
-            // we have created the roles object in the navigation builder
-            delete: authController.extra?.includes("super")
-        }),
+        permissions: ({ authController }) => {
+            const isAdmin = authController.extra?.roles.includes("admin") || authController.extra?.roles.includes("super");
+            return ({
+                edit: isAdmin,
+                create: false,
+                // we have created the roles object in the navigation builder
+                delete: false
+            })
+        },
         properties: {
             title: {
                 name: "Title",
@@ -74,24 +96,22 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
             },
             description: {
                 name: "Description",
-                validation: { required: true },
                 dataType: "string",
+                multiline: true,
                 Preview: CustomHTMLPreview
             },
             optional: {
                 name: "Optional",
-                validation: { required: true },
                 dataType: "boolean"
             },
-            countChildren: {
-                name: "Children",
-                dataType: "number"
-            },
-            icon: {
-                name: "Icon",
-                dataType: "string",
-                Preview: CustomImagePreview
-            },
+            // icon: {
+            //     name: "Icon",
+            //     dataType: "string",
+            //     storage: {
+            //         storagePath: "images",
+            //         acceptedFiles: ["image/*"]
+            //     },
+            // },
             links: buildProperty({
                 name: "Links",
                 dataType: "array",
@@ -102,18 +122,10 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
                             name: "Title",
                             dataType: "string"
                         },
-                        description: {
-                            name: "Description",
-                            dataType: "string"
-                        },
-                        imageUrl: {
-                            name: "Image url",
+                        reference: {
+                            name: "Link url",
                             dataType: "string",
-                            Preview: CustomImagePreview
-                        },
-                        filename: {
-                            name: "File name",
-                            dataType: "string"
+                            url: true
                         }
                     }
                 }),
@@ -121,9 +133,16 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
             }),
             order: {
                 name: "Order",
-                dataType: "number"
+                dataType: "number",
+                readOnly: true
+            },
+            countChildren: {
+                name: "Child skills",
+                dataType: "number",
+                readOnly: true
             }
-        }
+        },
+        callbacks: skillCallbacks
     });
 }
 
