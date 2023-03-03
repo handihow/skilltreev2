@@ -13,22 +13,16 @@ import {
 } from "@mui/material";
 
 import {
-    EntityCollection,
     useAuthController,
     useSideEntityController,
     useSnackbarController,
-    useStorageSource,
 } from "firecms";
 
-import { httpsCallable } from "firebase/functions";
-import { functions } from "../services/firestore";
+import { addComposition, addOrRemoveSharedUser, deleteComposition, getCompositions } from "../services/firestore";
 
 import { simpleCompositionsCollection, IComposition } from "../collections/composition_collection";
-import { db } from "../services/firestore"
-import { collection, getDocs, orderBy, query, where, Timestamp, addDoc, setDoc, arrayRemove, doc, updateDoc } from "firebase/firestore";
 import AlertDialog from "./widgets/AlertDialog";
 import { useNavigate } from "react-router-dom";
-import { standardChildSkills, standardRootSkill } from "../common/StandardData";
 
 /**
  * Sample CMS view not bound to a collection, customizable by the developer
@@ -49,126 +43,52 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
     // hook to do operations related to authentication
     const authController = useAuthController();
 
-    const storageSource = useStorageSource();
-
     const initialList: IComposition[] = []
     const [compositionsList, setCompositionList] = useState(initialList);
 
     const [isLoading, setIsLoading] = useState(true);
 
-    const loadContent = () => {
+    const handleError = (error: string) => {
+        snackbarController.open({
+            type: "error",
+            message: "Could not retrieve your compositions: " + error
+        })
+        setIsLoading(false)
+    }
+
+    const initialize = async () => {
         if (!authController.user) return;
-        const skillTreeColRef = collection(db, 'compositions');
-        let skillTreeQuery;
-        if (view === "owned") {
-            skillTreeQuery = query(skillTreeColRef, where("user", "==", authController.user.uid), orderBy("lastUpdate", "desc"));
-        } else {
-            skillTreeQuery = query(skillTreeColRef, where("sharedUsers", "array-contains", authController.user.uid), orderBy("lastUpdate", "desc"))
-        }
-        getDocs(skillTreeQuery)
-            .then(async (values) => {
-                const compositions: IComposition[] = []
-                for (const value of values.docs) {
-                    let composition: IComposition = { id: value.id, ...value.data() as IComposition };
-                    if (composition.backgroundImage) {
-                        const resized = composition.backgroundImage.split(".")[0] + "_500x500." + composition.backgroundImage.split(".")[1];
-                        try {
-                            const config = await storageSource.getDownloadURL(resized);
-                            composition.url = config.url
-                        } catch (e) {
-                            console.log(e);
-                            composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
-                        }
-                    } else {
-                        composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
-                    }
-                    compositions.push(composition);
-                }
-                setCompositionList(compositions);
-                setIsLoading(false);
-            })
-            .catch((err) => {
-                snackbarController.open({
-                    type: "error",
-                    message: "Could not retrieve your compositions: " + err.message
-                })
-                setIsLoading(false)
-            });
+        const [compositions, error] = await getCompositions(authController.user.uid, view);
+        if (error) return handleError(error);
+        setCompositionList(compositions || []);
+        setIsLoading(false);
     }
 
     useEffect(() => {
-        console.log('loading content')
-        loadContent();
+        initialize();
     }, [])
 
-    const addComposition = async () => {
-        try {
-            const newComposition: IComposition = {
-                title: "My SkillTree",
-                user: authController.user?.uid || "",
-                username: authController.user?.email || "",
-                hasBackgroundImage: false,
-                canCopy: false,
-                loggedInUsersCanEdit: true,
-                loggedInUsersOnly: true,
-                skillcount: 3,
-                lastUpdate: Timestamp.now(),
-            };
-            const skillTreeColRef = collection(db, 'compositions');
-            const composition = await addDoc(skillTreeColRef, newComposition);
-            await updateDoc(composition, { id: composition.id });
-            const newSkilltree = {
-                title: "Example skilltree",
-                description: "More information about my skill tree",
-                collapsible: true,
-                order: 0,
-            };
-            const skilltreeColRef = collection(db, 'compositions', composition.id, 'skilltrees');
-            const skilltree = await addDoc(skilltreeColRef, newSkilltree);
-            await updateDoc(skilltree, { id: skilltree.id });
-            const newRootSkill = {
-                skilltree: skilltree.id,
-                composition: composition.id,
-                ...standardRootSkill
-            };
-            const rootSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills');
-            const rootSkill = await addDoc(rootSkillColRef, newRootSkill);
-            await updateDoc(rootSkill, { id: rootSkill.id })
-            const childSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills', rootSkill.id, 'skills');
-            for (const child of standardChildSkills) {
-                const childSkill = await addDoc(childSkillColRef, { skilltree: skilltree.id, composition: composition.id, ...child });
-                await updateDoc(childSkill, { id: childSkill.id })
-            }
-            setIsLoading(true);
-            loadContent();
-        } catch (err) {
-            snackbarController.open({
-                type: "error",
-                message: "Could not add skilltree: " + err
-            })
-            setIsLoading(false)
-        }
+    const add = async () => {
+        if (!authController.user) return;
+        setIsLoading(true);
+        const error = await addComposition(authController.user.uid, authController.user.email || "")
+        if (error) return handleError(error);
+        initialize();
     };
 
-    const deleteComposition = async (id: string) => {
+    const del = async ({ id }: { id: string }) => {
         setIsLoading(true);
-        const path = `compositions/${id}`;
-        const deleteFirestorePathRecursively = httpsCallable(
-            functions,
-            "deleteFirestorePathRecursively"
-        );
-        await deleteFirestorePathRecursively({
-            collection: "Skilltree",
-            path: path,
-        });
-        loadContent();
+        const error = await deleteComposition(id);
+        if (error) return handleError(error);
+        initialize();
     }
 
-    const removeSharedComposition = async (id: string) => {
+    const removeSharedComposition = async ({ id }: { id: string }) => {
+        if (!authController.user) return;
         setIsLoading(true);
-        const docRef = doc(db, 'compositions', id);
-        await updateDoc(docRef, { sharedUsers: arrayRemove(authController.user?.uid) })
-        loadContent();
+        const error = await addOrRemoveSharedUser(authController.user.uid, id, false)
+        if (error) return handleError(error);
+        initialize();
     }
 
     return (
@@ -191,7 +111,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
 
                         <Grid container rowSpacing={5} columnSpacing={2}>
                             {view === "owned" && <Grid item xs={12} sm={4} >
-                                <Card variant="outlined" sx={{ height: "100%", cursor: 'pointer' }} onClick={() => addComposition()}>
+                                <Card variant="outlined" sx={{ height: "100%", cursor: 'pointer' }} onClick={() => add()}>
                                     <CardMedia
                                         component="img"
                                         height="194"
@@ -204,7 +124,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                         </Typography>
                                     </CardContent>
                                     <CardActions>
-                                        <Button onClick={() => addComposition()} color="primary">
+                                        <Button onClick={() => add()} color="primary">
                                             Add
                                         </Button>
                                     </CardActions>
@@ -243,7 +163,13 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                                 color="primary">
                                                 Edit
                                             </Button>}
-                                            <AlertDialog deleteFunc={view === "owned" ? deleteComposition : removeSharedComposition} id={composition?.id || ""} />
+                                            <AlertDialog
+                                                agreeFunction={view === "owned" ? del : removeSharedComposition}
+                                                functionParams={{ id: composition?.id || "" }}
+                                                agreeBtnText="Yes, delete!"
+                                                openBtnText="Delete"
+                                                alertWarning="Are you sure that you want to delete?"
+                                            />
                                         </CardActions>
                                     </Card>
                                 </Grid>

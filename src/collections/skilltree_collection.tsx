@@ -6,8 +6,8 @@ import { skillsCollectionWithSubcollections } from "./skill_collection";
 export type ISkilltree = {
     id?: string
     title: string;
-    description: string;
-    collapsible: boolean;
+    description?: string;
+    collapsible?: boolean;
     order: number;
     composition?: string; //references the parent composition ID
     //make it compatible with skilltree
@@ -29,7 +29,7 @@ export const skilltreesCollection = buildCollection<ISkilltree>({
     path: "skilltrees",
     initialSort: ["order", "asc"],
     permissions: ({ authController }) => {
-        const isAdmin = authController.extra?.roles.includes("admin") || authController.extra?.roles.includes("super");
+        const isAdmin = authController.extra?.includes("admin") || authController.extra?.includes("super");
         return ({
             edit: isAdmin,
             create: false,
@@ -48,12 +48,10 @@ export const skilltreesCollection = buildCollection<ISkilltree>({
         },
         description: {
             name: "Description",
-            validation: { required: true },
             dataType: "string"
         },
         collapsible: {
             name: "Collapsible",
-            validation: { required: true },
             dataType: "boolean"
         },
         order: {

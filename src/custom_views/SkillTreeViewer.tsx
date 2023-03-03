@@ -27,6 +27,7 @@ import { useNavigate, useParams } from "react-router";
 import { ContextStorage } from "beautiful-skill-tree/dist/models";
 import { AutocompleteOption } from "../common/AutoCompleteOption.model";
 import { countSelectedSkills } from "../common/StandardFunctions";
+import { AlertDialog } from "./widgets/AlertDialog";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars
@@ -139,7 +140,7 @@ export function SkillTreeViewer() {
                 {isLoading ? <CircularProgress /> :
                     <SkillProvider>
                         <SkillTreeGroup theme={composition?.theme}>
-                            {({ handleFilter }) => (
+                            {({ handleFilter, resetSkills }) => (
                                 <React.Fragment>
                                     <Card sx={{ minWidth: 275, marginTop: 2, maxHeight: 275 }}>
                                         <CardContent>
@@ -166,6 +167,13 @@ export function SkillTreeViewer() {
                                             <TextField sx={{ width: 300, marginTop: 3 }} id="text-field" label="Filter skills" onChange={(event: any) => handleFilter(event.target.value || "")} />
                                         </CardContent>
                                         <CardActions>
+                                            <AlertDialog 
+                                                agreeFunction={resetSkills} 
+                                                functionParams={undefined}
+                                                agreeBtnText="Yes, reset!"
+                                                openBtnText="Reset"
+                                                alertWarning="Are you sure that you want to reset the completion status of all skills?"
+                                            />
                                             <Button aria-label="delete" size="small" onClick={() => backToOverview()}>
                                                 Back
                                             </Button>

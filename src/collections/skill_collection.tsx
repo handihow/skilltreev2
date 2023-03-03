@@ -77,10 +77,10 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
         path: "skills",
         group: "Content",
         subcollections,
-        initialSort: ["order", "asc"],
+        initialSort: hasSubcollections ? ["order", "asc"] : undefined,
         icon: "FormatListBulleted",
         permissions: ({ authController }) => {
-            const isAdmin = authController.extra?.roles.includes("admin") || authController.extra?.roles.includes("super");
+            const isAdmin = authController.extra?.includes("admin") || authController.extra?.includes("super");
             return ({
                 edit: isAdmin,
                 create: false,

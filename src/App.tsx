@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { User as FirebaseUser } from "firebase/auth";
 import {
@@ -8,8 +8,7 @@ import {
     FirebaseCMSApp,
 } from "firecms";
 
-import { db } from "./services/firestore";
-import { getDocs, collection } from "firebase/firestore";
+import { getUserRoles } from "./services/firestore";
 import { loadFonts } from "./services/fonts";
 loadFonts();
 import "typeface-rubik";
@@ -85,20 +84,10 @@ export default function App() {
         // }
 
         console.log("Allowing access to", user?.email);
-        const userRolesRef = collection(db, 'users/' + user?.uid + '/roles')
-        // This is an example of retrieving async data related to the user
-        // and storing it in the user extra field.
-        const sampleUserRolesSnap = await getDocs(userRolesRef);
-        const roles = sampleUserRolesSnap.docs.map(d => { 
-            if(d.data().hasRole) {
-                return d.id
-            } else {
-                return "";
-            }
-        });
-        console.log(roles)
+        const [roles, error] = await getUserRoles(user?.uid || "")
+        console.log(error);
         authController.setExtra(roles);
-        if(roles.includes("super")) {
+        if(roles && roles.includes("super")) {
             setCollections([compositionsCollection, usersCollection, organizationCollection, skillsCollection])
         }
         return true;
