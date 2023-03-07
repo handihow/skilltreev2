@@ -1,5 +1,5 @@
 import {
-    buildCollection,
+    buildCollection, buildEntityCallbacks, EntityCollection, EntityOnFetchProps, EntityReference,
 } from "firecms";
 
 const roles = {
@@ -24,6 +24,7 @@ const rolesCollection = buildCollection({
 });
 
 export type IUser = {
+    uid?: string;
     email: string;
     displayName: string;
     photoURL?: string;
@@ -34,76 +35,116 @@ export type IUser = {
     creationTime?: any;
     lastSignInTime?: any;
     type?: string;
-    organisation?: string;
+    organization?: string;
     subjects?: string;
     groups?: string;
     programs?: string;
 }
 
 
-export const usersCollection = buildCollection<IUser>({
-    name: "Users",
-    description: "Manage all users",
-    singularName: "User",
-    path: "users",
-    group: "Administration",
-    subcollections: [
-        rolesCollection
-    ],
-    icon: "AccountCircle",
-    permissions: ({ authController }) => ({
-        edit: true,
-        create: false,
-        // we have created the roles object in the navigation builder
-        delete: false
-    }),
-    properties: {
-        email: {
-            name: "Email",
-            validation: { required: true },
-            dataType: "string"
-        },
-        displayName: {
-            name: "Display name",
-            validation: { required: true },
-            dataType: "string"
-        },
-        emailVerified: {
-            name: "Email verified",
-            dataType: "boolean"
-        },
-        hostedDomain: {
-            name: "Domain",
-            dataType: "string"
-        },
-        provider: {
-            name: "Provider",
-            dataType: "string"
-        },
-        creationTime: {
-            name: "Created",
-            dataType: "string"
-        },
-        lastSignInTime: {
-            name: "Last sign-in",
-            dataType: "string"
-        },
-        type: {
-            name: "Type",
-            dataType: "string"
-        },
-        organisation: {
-            name: "Organization",
-            dataType: "string"
-        },
-        subjects: {
-            dataType: "array",
-            name: "Subjects",
-            of: {
-                dataType: "string",
-                previewAsTag: true
-            },
-            expanded: true
+const userCallbacks = buildEntityCallbacks({
+    onPreSave: ({
+        collection,
+        path,
+        entityId,
+        values,
+        status
+    }) => {
+        // return the updated values
+        if (values.organization) {
+            values.organization = values.organization.id;
         }
-    }
+        return values;
+    },
+
+    onFetch({
+        collection,
+        context,
+        entity,
+        path,
+    }: EntityOnFetchProps) {
+        if (entity.values.organization) {
+            entity.values.organization = new EntityReference(entity.values.organization, "organizations");
+        }
+        return entity;
+    },
 });
+
+export function buildUsersCollection(organization?: string): EntityCollection<IUser> {
+    return buildCollection<IUser>({
+        name: "Users",
+        description: "Manage all users",
+        singularName: "User",
+        path: "users",
+        group: "Administration",
+        subcollections: [
+            rolesCollection
+        ],
+        icon: "AccountCircle",
+        inlineEditing: false,
+        permissions: ({ authController }) => ({
+            edit: authController.extra?.roles?.includes("super"),
+            create: false,
+            // we have created the roles object in the navigation builder
+            delete: false
+        }),
+        forceFilter: organization ? { organization: ["==", organization] } : undefined,
+        properties: {
+            email: {
+                name: "Email",
+                validation: { required: true },
+                dataType: "string",
+                readOnly: true
+            },
+            displayName: {
+                name: "Display name",
+                validation: { required: true },
+                dataType: "string"
+            },
+            emailVerified: {
+                name: "Email verified",
+                dataType: "boolean",
+                readOnly: true
+            },
+            // hostedDomain: {
+            //     name: "Domain",
+            //     dataType: "string"
+            // },
+            provider: {
+                name: "Provider",
+                dataType: "string",
+                readOnly: true
+            },
+            creationTime: {
+                name: "Created",
+                dataType: "string",
+                readOnly: true
+            },
+            lastSignInTime: {
+                name: "Last sign-in",
+                dataType: "string",
+                readOnly: true
+            },
+            // type: {
+            //     name: "Type",
+            //     dataType: "string"
+            // },
+            organization: {
+                name: "Organization",
+                dataType: "reference",
+                path: "organizations",
+                previewProperties: ["name"]
+            },
+            // subjects: {
+            //     dataType: "array",
+            //     name: "Subjects",
+            //     of: {
+            //         dataType: "string",
+            //         previewAsTag: true
+            //     },
+            //     expanded: true
+            // }
+        },
+        callbacks: userCallbacks
+    })
+};

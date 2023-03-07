@@ -1,5 +1,23 @@
 import { initializeApp } from "firebase/app";
-import { addDoc, arrayRemove, arrayUnion, collection, collectionGroup, doc, getDoc, getDocs, getFirestore, orderBy, query, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
+import {
+    addDoc,
+    arrayRemove,
+    arrayUnion,
+    collection,
+    collectionGroup,
+    doc,
+    getCountFromServer,
+    getDoc,
+    getDocs,
+    getFirestore,
+    orderBy,
+    query,
+    setDoc,
+    Timestamp,
+    updateDoc,
+    where,
+    deleteDoc
+} from "firebase/firestore";
 import { firebaseConfig } from "../firebase_config";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
@@ -11,34 +29,99 @@ import { AutocompleteOption } from "../common/AutoCompleteOption.model";
 import { SavedDataType } from "beautiful-skill-tree";
 import { IUser } from "../collections/user_collection";
 import { standardRootSkill, standardChildSkills } from "../common/StandardData";
+import { User } from "firebase/auth";
+import { EntityStatus } from "firecms";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore and get a reference to the service
-const db = getFirestore(app);
+export const db = getFirestore(app);
 const functions = getFunctions(app);
 const storage = getStorage(app);
 
-export const getUserRoles = async (userId: string) : Promise<[string[] | null, string | null]> => {
-    const userRolesRef = collection(db, 'users/' + userId+ '/roles')
+export const getUserRoles = async (userId: string): Promise<[string[] | null, string | null]> => {
+    const userRolesRef = collection(db, 'users/' + userId + '/roles')
     try {
         const snap = await getDocs(userRolesRef);
-        if(snap.empty) return [[], "No user roles found"]
-        const roles = snap.docs.map(d => { 
-            if(d.data().hasRole) {
+        if (snap.empty) return [[], "No user roles found"]
+        const roles = snap.docs.map(d => {
+            if (d.data().hasRole) {
                 return d.id
             } else {
                 return "";
             }
         });
         return [roles, null];
-    } catch(err: any) {
+    } catch (err: any) {
         return [[], "Error while retrieving user roles" + err.message]
     }
 }
 
-export const addComposition = async (userId: string, email: string) : Promise<string | undefined> => {
+export const getUserOrganization = async (userId: string): Promise<[string | undefined, string | null]> => {
+    const userRef = doc(db, 'users', userId )
+    try {
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) return [undefined, "No user record found"]
+        const { organization = null } = snap.data();
+        return [organization, null];
+    } catch (err: any) {
+        return [undefined, err.message]
+    }
+}
+
+export const updateUser = async (user: User | null) : Promise<string | null> => {
+    if(!user) return "No user";
+    const updatedUser = constructUser(user);
+    const userRef = doc(db, 'users', user.uid );
+    try {
+        await setDoc(userRef, updatedUser, {merge: true});
+        return null;
+    } catch(err: any) {
+        return err.message;
+    }
+}
+
+const constructUser = (user: User) => {
+    let hostedDomain = "";
+    const provider = user?.providerData[0]?.providerId || "password";
+    if (
+      provider &&
+      provider === "google.com" &&
+      user.email &&
+      !["gmail.com", "googlemail.com"].includes(user.email.split("@").pop() || "")
+    ) {
+      hostedDomain = user.email.split("@").pop() || "";
+    } else if (
+      provider &&
+      provider === "microsoft.com" &&
+      user.email &&
+      !["outlook.com", "live.com", "hotmail.com"].includes(
+        user.email.split("@").pop() || ""
+      )
+    ) {
+      hostedDomain = user.email.split("@").pop() || "";
+    }
+    //create or update user record in firestore db
+    const signedInUser: IUser = {
+      uid: user.uid,
+      email: user.email || "",
+      displayName: user.displayName || "",
+      photoURL: user.photoURL
+        ? user.photoURL
+        : `https://eu.ui-avatars.com/api/?name=${user.displayName}`,
+      emailVerified: user.emailVerified,
+      hostedDomain,
+      provider,
+      creationTime: user?.metadata?.creationTime || null,
+      lastSignInTime: user?.metadata?.lastSignInTime || null,
+    };
+    return signedInUser;
+  };
+
+
+
+export const addComposition = async (userId: string, email: string): Promise<string | undefined> => {
     try {
         const newComposition: IComposition = {
             title: "My SkillTree",
@@ -82,7 +165,7 @@ export const addComposition = async (userId: string, email: string) : Promise<st
     }
 }
 
-export const deleteComposition = async (id: string) : Promise<string | undefined> => {
+export const deleteComposition = async (id: string): Promise<string | undefined> => {
     const path = `compositions/${id}`;
     const deleteFirestorePathRecursively = httpsCallable(
         functions,
@@ -91,20 +174,93 @@ export const deleteComposition = async (id: string) : Promise<string | undefined
     try {
         await deleteFirestorePathRecursively({
             collection: "Skilltree",
-            path: path,
+            path,
         });
         return;
-    } catch(err: any) {
+    } catch (err: any) {
         return "Could not delete skilltree: " + err.message;
     }
 }
 
-export const addOrRemoveSharedUser = async (userId: string, compositionId: string, add = true ) : Promise<string | undefined> => {
+export const deleteSkillsOfSkilltree = async (skilltreeId: string) => {
+    const skillsColRef = collectionGroup(db, 'skills');
+    const skillQuery = query(skillsColRef, where("skilltree", "==", skilltreeId));
+    try {
+        const skillSnap = await getDocs(skillQuery);
+        for (const doc of skillSnap.docs) {
+            await deleteDoc(doc.ref);
+        }
+        return;
+    } catch(err: any) {
+        return err.message as string;
+    }
+}
+
+export const deleteFromPathRecursively = async (path: string, collection: string) => {
+    const deleteFirestorePathRecursively = httpsCallable(
+        functions,
+        "deleteFirestorePathRecursively"
+    );
+    try {
+        await deleteFirestorePathRecursively({
+            collection,
+            path,
+        });
+        return;
+    } catch (err: any) {
+        return "Could not delete skills: " + err.message;
+    }
+}
+
+export const updateOrder = async (path: string, order: number) => {
+    const ref = doc(db, path);
+    return updateDoc(ref, {
+        order
+    });
+}
+
+
+export const updateSharedUserStatus = async ( sharedUserIds: string[], compositionId: string, status: EntityStatus) => {
+    const compositionRef = doc(db, 'compositions', compositionId);
+    try {
+        if(status === "existing"){
+            const snap = await getDoc(compositionRef);
+            const { sharedUsers = [] } = snap.data() as IComposition;
+            for (const id of sharedUsers) {
+                const index = sharedUserIds.findIndex(sui => sui === id);
+                if(index === -1) {
+                    await addOrRemoveSharedUser(id, compositionId, false, false);
+                }
+            }
+        }
+        for (const userId of sharedUserIds) {
+            await addOrRemoveSharedUser(userId, compositionId, true, false);
+        }
+        return;
+    } catch(err: any) {
+        return err.message;
+    }
+}
+
+
+export const addOrRemoveSharedUser = async (userId: string, compositionId: string, add = true, updateComposition = true): Promise<string | undefined> => {
     const docRef = doc(db, 'compositions', compositionId);
     const sharedUsers = add ? arrayUnion(userId) : arrayRemove(userId);
+    const resultDocRef = doc(db, 'results', userId);
+    const compositions = add ? arrayUnion(compositionId) : arrayRemove(compositionId);
+    const userDocRef = doc(db, 'users', userId);
     try {
-        await updateDoc(docRef, { sharedUsers })
-    } catch(err: any) {
+        if(updateComposition) await setDoc(docRef, { sharedUsers }, {merge: true});
+        const snap = await getDoc(userDocRef);
+        const { email = "", displayName = "", photoURL = "" } = snap.data() as IUser;
+        await setDoc(resultDocRef, {
+            user: userId,
+            email,
+            displayName,
+            photoURL,
+            compositions,
+        }, { merge: true });
+    } catch (err: any) {
         console.log(err);
         return err.message as string;
     }
@@ -170,18 +326,26 @@ export const getCompositionSkilltrees = async (id: string): Promise<[ISkilltree[
         const skillQuery = query(skillsColRef, where("composition", "==", id), orderBy("order"));
         const skillSnap = await getDocs(skillQuery);
         const skills: ISkill[] = [];
-        skillSnap.docs.forEach((doc) => {
+        for (const doc of skillSnap.docs) {
             const skill: ISkill = {
                 parent: doc.ref.path.split("/"),
                 path: doc.ref.path,
                 ...(doc.data() as ISkill),
             };
+            if (skill.image) {
+                const resized = skill.image.split(".")[0] + "_128x128." + skill.image.split(".")[1];
+                const reference = ref(storage, resized);
+                skill.icon = await getDownloadURL(reference);
+            }
             skills.push(skill);
-        });
+        }
+
         skilltrees.forEach((skilltree) => {
             skilltree.data = skillArrayToSkillTree(
                 skills.filter((s: ISkill) => s.skilltree === skilltree.id),
-                true
+                false,
+                () => {},
+                () => {}
             );
         });
         return [skilltrees, skillSnap.docs.length, null];
@@ -227,11 +391,6 @@ export const saveUserResults = async (userId: string | undefined, treeId: string
     if (!userId || !compositionId) return "Not enough information to store results";
     const skilltreeDoc = doc(db, 'results', userId, 'skilltrees', treeId);
     try {
-        await setDoc(skilltreeDoc, {
-            skills,
-            id: treeId,
-            compositionId: compositionId,
-        });
         const userDoc = doc(db, 'users', userId);
         const snap = await getDoc(userDoc);
         const { email = "", displayName = "", photoURL = "" } = snap.data() as IUser;
@@ -246,9 +405,20 @@ export const saveUserResults = async (userId: string | undefined, treeId: string
                 [compositionId]: progress,
             },
         }, { merge: true });
+        await setDoc(skilltreeDoc, {
+            skills,
+            id: treeId,
+            compositionId: compositionId,
+        });
         return;
     } catch (e: any) {
         return e.message as string;
     }
 
+}
+
+export const getCountFromPath = async (path: string) => {
+    const coll = collection(db, path);
+    const snapshot = await getCountFromServer(coll);
+    return snapshot.data().count;
 }

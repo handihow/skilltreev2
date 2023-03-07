@@ -1,59 +1,86 @@
 
 import {
     buildCollection,
+    buildEntityCallbacks,
     buildProperty,
     EntityCollection,
-    EntityCustomView,
+    EntityOnFetchProps,
+    EntityReference,
 } from "firecms";
 import { SkillThemeType } from "beautiful-skill-tree";
 import { skilltreesCollection } from "./skilltree_collection";
-import { SkillTreeEntityViewer } from "../custom_entity_views/SkillTreeEntityViewer";
-import { colors, gradients} from "../common/StandardData";
+import { colors, gradients } from "../common/StandardData";
 import { getLoadedFonts } from "../services/fonts";
+import { updateSharedUserStatus } from "../services/firestore";
+import { ViewSkillTreeAction } from "../actions/viewST.actions";
 
 export type IComposition = {
     id?: string;
     title: string;
+    // owner?: EntityReference;
     user?: string; //refers to user uid
     username?: string; //refers to user email
     theme?: SkillThemeType;
-    hasBackgroundImage?: boolean;
     backgroundImage?: string;
-    thumbnailImage?: string;
-    skillcount?: number;
     loggedInUsersOnly?: boolean;
     loggedInUsersCanEdit?: boolean;
     canCopy?: boolean;
     sharedUsers?: string[];
+    // sharedWith?: EntityReference[];
     lastUpdate?: any;
     url?: string;
+    evaluationModel?: any;
 }
 
-const skillTreeViewer: EntityCustomView = {
-    path: "viewer",
-    name: "SkillTree viewer",
-    builder: (props) => <SkillTreeEntityViewer {...props}/>
-};
+const compositionCallbacks = buildEntityCallbacks({
+    onPreSave: ({
+        entityId,
+        values,
+        status
+    }) => {
+        // return the updated values
+        console.log(status);
+        values.user = values.user.id;
+        if(values.sharedUsers) {
+            values.sharedUsers = values.sharedUsers.map((su: EntityReference) => su.id);
+            updateSharedUserStatus(values.sharedUsers, values.id, status);
+        }
+        if(status !== "existing") {
+            values.id = entityId;
+        }
+        return values;
+    },
+    
+    onFetch({
+        entity,
+    }: EntityOnFetchProps) {
+        entity.values.user = new EntityReference(entity.values.user, "users");
+        if(entity.values.sharedUsers) {
+            entity.values.sharedUsers = entity.values.sharedUsers.map((su: string) => new EntityReference(su, "users"))
+        }
+        return entity;
+    },
+});
 
-function buildCompositionsCollection(simple: boolean): EntityCollection<IComposition> {
+export function buildCompositionsCollection(simple: boolean, organization?: string): EntityCollection<IComposition> {
     const fonts = getLoadedFonts();
     const subcollections = simple ? [] : [
         skilltreesCollection,
     ];
     return buildCollection<IComposition>({
-        name: "Compositions",
-        description: "Manage all compositions",
-        singularName: "Composition",
+        name: "SkillTrees",
+        description: "Manage all SkillTrees",
+        singularName: "SkillTree",
         path: "compositions",
         group: "Content",
-        views: simple ? [] : [
-            skillTreeViewer
-        ],
+        // views: simple ? [] : [skillTreeViewer],
+        Actions: [ViewSkillTreeAction],
+        inlineEditing: false,
         permissions: ({ authController }) => ({
-            edit: simple || authController.extra?.includes("super"),
-            create: simple || authController.extra?.includes("super"),
+            edit: true,
+            create: false,
             // we have created the roles object in the navigation builder
-            delete: simple || authController.extra?.includes("super")
+            delete: false || authController.extra?.roles.includes("super")
         }),
         subcollections,
         icon: "AccountTree",
@@ -63,12 +90,25 @@ function buildCompositionsCollection(simple: boolean): EntityCollection<IComposi
                 validation: { required: true },
                 dataType: "string"
             },
-            username: {
+            user: buildProperty({
                 name: "Owner",
-                validation: { required: true },
-                dataType: "string",
+                dataType: "reference",
+                path: "users",
+                previewProperties: ["displayName", "email"],
+                validation: {required: true},
                 readOnly: true
-            },
+            }),
+            sharedUsers: buildProperty({
+                name: "Shared with",
+                dataType: "array",
+                of: {
+                    dataType: "reference",
+                    path: "users",
+                    previewProperties: ["displayName", "email"],
+                    forceFilter: organization ? { organization: ["==", organization] } : undefined
+                },
+                expanded: false
+            }),
             loggedInUsersOnly: {
                 name: "Logged in only",
                 dataType: "boolean",
@@ -84,23 +124,13 @@ function buildCompositionsCollection(simple: boolean): EntityCollection<IComposi
                 dataType: "boolean",
                 columnWidth: 200
             },
-            hasBackgroundImage: {
-                name: "Has background",
-                dataType: "boolean",
-                columnWidth: 200
-            },
-            backgroundImage: ({ values}) => buildProperty({ // The `buildProperty` method is a utility function used for type checking
+            backgroundImage: ({ values }) => buildProperty({
                 name: "Background",
                 dataType: "string",
                 storage: {
                     storagePath: "images",
                     acceptedFiles: ["image/*"]
-                },
-                disabled: !values.hasBackgroundImage && {
-                    clearOnDisabled: false,
-                    disabledMessage: "You can only set the background image when you enable it"
-                },
-                hideFromCollection: !simple
+                }
             }),
             theme: buildProperty({
                 name: "Theme",
@@ -282,13 +312,21 @@ function buildCompositionsCollection(simple: boolean): EntityCollection<IComposi
                 },
                 hideFromCollection: !simple
             }),
+            evaluationModel: buildProperty({
+                name: "Evaluation model",
+                description: "Grade skills. Optional skills are not grades by default.",
+                dataType: "reference",
+                path: "evaluation_models",
+                previewProperties: ["name", "type"],
+            }),
             lastUpdate: {
                 name: "Last update",
                 dataType: "date",
                 readOnly: true,
                 autoValue: "on_update"
             }
-        }
+        },
+        callbacks: compositionCallbacks
     });
 }
 

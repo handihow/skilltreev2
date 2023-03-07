@@ -1,14 +1,18 @@
 import {
-    buildCollection,
+    buildCollection, buildEntityCallbacks, EntityOnDeleteProps,
 } from "firecms";
+import { deleteSkillsOfSkilltree, getCountFromPath } from "../services/firestore";
 import { skillsCollectionWithSubcollections } from "./skill_collection";
+import { MoveDownAction, MoveUpAction } from "../actions/move.actions";
 
 export type ISkilltree = {
     id?: string
     title: string;
     description?: string;
     collapsible?: boolean;
-    order: number;
+    closedByDefault?: boolean;
+    disabled?: boolean;
+    order?: number;
     composition?: string; //references the parent composition ID
     //make it compatible with skilltree
     data?: any;
@@ -22,24 +26,51 @@ export type ISkilltree = {
     path?: string;
 }
 
+const skilltreeCallbacks = buildEntityCallbacks({
+    onPreSave: async ({
+        path,
+        values,
+        entityId,
+        status
+    }) => {
+        // return the updated values
+        if (status !== "existing") {
+            const split = path.split("/");
+            values.composition = split.length ? split[1] : "";
+            values.order = await getCountFromPath(path);
+            values.id = entityId;
+        }
+        return values;
+    },
+    onPreDelete: async ({
+        entityId
+    }: EntityOnDeleteProps<ISkilltree>
+    ) => {
+        const error = await deleteSkillsOfSkilltree(entityId);
+        if(error) throw new Error(error);
+    },
+});
+
 
 export const skilltreesCollection = buildCollection<ISkilltree>({
-    name: "Skilltrees",
-    singularName: "Skilltree",
+    name: "Trees",
+    singularName: "Tree",
     path: "skilltrees",
     initialSort: ["order", "asc"],
     permissions: ({ authController }) => {
-        const isAdmin = authController.extra?.includes("admin") || authController.extra?.includes("super");
+        const isStudent = authController.extra?.roles.includes("student");
         return ({
-            edit: isAdmin,
-            create: false,
+            edit: !isStudent,
+            create: !isStudent,
             // we have created the roles object in the navigation builder
-            delete: false
+            delete: !isStudent
         })
     },
+    Actions: [MoveDownAction, MoveUpAction],
     subcollections: [
         skillsCollectionWithSubcollections
     ],
+    inlineEditing: false,
     properties: {
         title: {
             name: "Title",
@@ -52,12 +83,24 @@ export const skilltreesCollection = buildCollection<ISkilltree>({
         },
         collapsible: {
             name: "Collapsible",
-            dataType: "boolean"
+            dataType: "boolean",
+            defaultValue: true
+        },
+        closedByDefault: {
+            name: "Closed by default",
+            dataType: "boolean",
+            defaultValue: false
+        },
+        disabled: {
+            name: "Disabled",
+            dataType: "boolean",
+            defaultValue: false
         },
         order: {
             name: "Order",
-            validation: { required: true },
-            dataType: "number"
+            dataType: "number",
+            readOnly: true
         }
-    }
+    },
+    callbacks: skilltreeCallbacks
 });

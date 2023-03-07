@@ -8,25 +8,27 @@ import {
     FirebaseCMSApp,
 } from "firecms";
 
-import { getUserRoles } from "./services/firestore";
+import { getUserOrganization, getUserRoles, updateUser } from "./services/firestore";
 import { loadFonts } from "./services/fonts";
 loadFonts();
 import "typeface-rubik";
 import "@fontsource/ibm-plex-mono";
 
-import { usersCollection } from "./collections/user_collection";
-import { compositionsCollection } from "./collections/composition_collection";
+import { buildUsersCollection } from "./collections/user_collection";
+import { buildCompositionsCollection } from "./collections/composition_collection";
 import { organizationCollection } from "./collections/organization_collection";
 import { firebaseConfig } from "./firebase_config";
 import { skillsCollection } from "./collections/skill_collection";
 import { MySkillTreesView } from "./custom_views/MySkillTrees";
 import { SkillTreeViewer } from "./custom_views/SkillTreeViewer";
+import { SkillTreeEditor } from "./custom_views/SkillTreeEditor";
 import { IconButton, Tooltip } from "@mui/material";
 import { GitHub } from "@mui/icons-material";
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { fab } from '@fortawesome/free-brands-svg-icons'
+import { evaluationModelCollection } from "./collections/evaluation_model_collection";
 library.add(fas)
 library.add(fab)
 
@@ -53,6 +55,13 @@ const customViews: CMSView[] = [
         hideFromNavigation: true,
         description: "SkillTree Viewer",
         view: <SkillTreeViewer />
+    },
+    {
+        path: "compositions/:id/editor",
+        name: "SkillTree Editor",
+        hideFromNavigation: true,
+        description: "SkillTree Editor",
+        view: <SkillTreeEditor />
     }
 ];
 
@@ -84,11 +93,27 @@ export default function App() {
         // }
 
         console.log("Allowing access to", user?.email);
-        const [roles, error] = await getUserRoles(user?.uid || "")
-        console.log(error);
-        authController.setExtra(roles);
+        const error = await updateUser(user);
+        if(error) throw Error(error);
+        const [roles, error1] = await getUserRoles(user?.uid || "")
+        const [organization, error2] = await getUserOrganization(user?.uid || "")
+        if(error2) throw Error(error2)
+        authController.setExtra({roles, organization});
         if(roles && roles.includes("super")) {
-            setCollections([compositionsCollection, usersCollection, organizationCollection, skillsCollection])
+            setCollections([
+                buildCompositionsCollection(false), 
+                buildUsersCollection(), 
+                evaluationModelCollection, 
+                organizationCollection, 
+                skillsCollection
+            ])
+        } else if(roles && roles.includes("admin")){
+            setCollections([
+                buildCompositionsCollection(false, organization), 
+                buildUsersCollection(organization), 
+                evaluationModelCollection, 
+                skillsCollection
+            ])
         }
         return true;
     }, []);
@@ -108,3 +133,7 @@ export default function App() {
         fontFamily="Nunito"
     />;
 }
+function getUserRecord(arg0: string): [any, any] | PromiseLike<[any, any]> {
+    throw new Error("Function not implemented.");
+}
+

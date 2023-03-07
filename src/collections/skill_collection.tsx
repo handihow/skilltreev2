@@ -1,8 +1,10 @@
 import {
-    buildProperty, buildCollection, EntityCollection, buildEntityCallbacks,
+    buildProperty, buildCollection, EntityCollection, buildEntityCallbacks, EntityOnDeleteProps,
 } from "firecms";
 import CustomHTMLPreview from "../custom_field_preview/HTMLPreview";
 import { IconPrefix, IconName } from '@fortawesome/fontawesome-svg-core';
+import { deleteFromPathRecursively, getCountFromPath } from "../services/firestore";
+import { MoveDownAction, MoveUpAction } from "../actions/move.actions";
 
 type ILink = {
     id: string;
@@ -22,6 +24,7 @@ export type ISkill = {
     title: string;
     description?: string;
     icon?: string;
+    image?: string;
     links?: ILink[];
     order?: number;
     optional: boolean;
@@ -30,7 +33,7 @@ export type ISkill = {
     category?: string;
     reference?: string;
     //properties to track the parent and path
-    parent?: any;
+    parent?: string[];
     path?: string;
     hierarchy?: number;
     //properties to assist in loading into skilltree
@@ -48,20 +51,38 @@ export type ISkill = {
 
 
 const skillCallbacks = buildEntityCallbacks({
-    onPreSave: ({
-        collection,
+    onPreSave: async ({
         path,
-        entityId,
         values,
+        entityId,
         status
     }) => {
         // return the updated values
         if (values.links && values.links.length > 0) {
-            values.links = values.links.map((l: any) => {
-                return { id: Math.floor(Math.random() * 10000), iconName: "link", iconPrefix: "fas", ...l }
+            values.links = values.links.map((link: any) => {
+                return { id: Math.floor(Math.random() * 10000), iconName: "link", iconPrefix: "fas", ...link }
             })
         }
+        if(status !== "existing") {
+            const split = path.split("/");
+            values.composition = split.length ? split[1] : "";
+            values.skilltree = split.length ? split[3] : "";
+            values.order = await getCountFromPath(path);
+            values.id = entityId;
+        }
         return values;
+    },
+    onPreDelete: async ({
+        path,
+        entityId,
+        entity
+    }: EntityOnDeleteProps<ISkill>
+    ) => {
+        console.log(path);
+        const collectionPath = path + "/" + entityId + "/skills"
+        const error = await deleteFromPathRecursively(collectionPath, "Skill")
+        if(error) throw new Error(error);
+        // if(entity.values.countChildren && entity.values.countChildren > 0) throw new Error("This skill has children. Delete the child skills first");
     },
 });
 
@@ -79,15 +100,17 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
         subcollections,
         initialSort: hasSubcollections ? ["order", "asc"] : undefined,
         icon: "FormatListBulleted",
+        inlineEditing: false,
         permissions: ({ authController }) => {
-            const isAdmin = authController.extra?.includes("admin") || authController.extra?.includes("super");
+            const isStudent = authController.extra?.roles.includes("student");
             return ({
-                edit: isAdmin,
-                create: false,
+                edit: !isStudent,
+                create: !isStudent,
                 // we have created the roles object in the navigation builder
-                delete: false
+                delete: !isStudent
             })
         },
+        Actions: [MoveDownAction, MoveUpAction],
         properties: {
             title: {
                 name: "Title",
@@ -104,14 +127,14 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
                 name: "Optional",
                 dataType: "boolean"
             },
-            // icon: {
-            //     name: "Icon",
-            //     dataType: "string",
-            //     storage: {
-            //         storagePath: "images",
-            //         acceptedFiles: ["image/*"]
-            //     },
-            // },
+            image: {
+                name: "Image",
+                dataType: "string",
+                storage: {
+                    storagePath: "images",
+                    acceptedFiles: ["image/*"]
+                },
+            },
             links: buildProperty({
                 name: "Links",
                 dataType: "array",
@@ -120,27 +143,35 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
                     properties: {
                         title: {
                             name: "Title",
-                            dataType: "string"
+                            dataType: "string",
+                            validation: {
+                                required: true,
+                                requiredMessage: "Title is required"
+                            }
                         },
                         reference: {
                             name: "Link url",
                             dataType: "string",
-                            url: true
+                            url: true,
+                            validation: {
+                                required: true,
+                                requiredMessage: "Link is required"
+                            }
                         }
                     }
                 }),
-                expanded: true
+                expanded: false
             }),
             order: {
                 name: "Order",
                 dataType: "number",
                 readOnly: true
             },
-            countChildren: {
-                name: "Child skills",
-                dataType: "number",
-                readOnly: true
-            }
+            // countChildren: {
+            //     name: "Child skills",
+            //     dataType: "number",
+            //     readOnly: true
+            // }
         },
         callbacks: skillCallbacks
     });

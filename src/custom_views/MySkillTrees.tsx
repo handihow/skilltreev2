@@ -20,7 +20,7 @@ import {
 
 import { addComposition, addOrRemoveSharedUser, deleteComposition, getCompositions } from "../services/firestore";
 
-import { simpleCompositionsCollection, IComposition } from "../collections/composition_collection";
+import { IComposition } from "../collections/composition_collection";
 import AlertDialog from "./widgets/AlertDialog";
 import { useNavigate } from "react-router-dom";
 
@@ -35,6 +35,10 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
     const navigate = useNavigate();
     const viewSkillTree = (id: string) => {
         navigate("/compositions/" + id + '/viewer');
+    }
+
+    const editorSkillTree = (id: string) => {
+        navigate("/compositions/" + id + '/editor');
     }
 
     // hook to open the side dialog that shows the entity forms
@@ -146,21 +150,11 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                             </Typography>
                                         </CardContent>
                                         <CardActions>
-                                            {view === "owned" && <Button>
-                                                Editor
-                                            </Button>}
+                                            
                                             <Button onClick={() => viewSkillTree(composition.id || '')}>
                                                 View
                                             </Button>
-
-                                            {view === "owned" && <Button
-                                                onClick={() => sideEntityController.open({
-                                                    entityId: composition.id,
-                                                    path: "/compositions", // this path is not mapped in our collections
-                                                    collection: simpleCompositionsCollection,
-                                                    width: 800
-                                                })}
-                                                color="primary">
+                                            {view === "owned" && <Button onClick={() => editorSkillTree(composition.id || '')}>
                                                 Edit
                                             </Button>}
                                             <AlertDialog
@@ -169,6 +163,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                                 agreeBtnText="Yes, delete!"
                                                 openBtnText="Delete"
                                                 alertWarning="Are you sure that you want to delete?"
+                                                btnColor="error"
                                             />
                                         </CardActions>
                                     </Card>

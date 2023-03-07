@@ -1,6 +1,6 @@
 import { ISkill } from '../collections/skill_collection';
 import { ISkilltree } from '../collections/skilltree_collection';
-import { buildEnumValueConfig, ChipColorKey, EnumValueConfig } from 'firecms';
+import { buildEnumValueConfig, ChipColorKey, ChipColorScheme, EnumValueConfig, EnumValues } from 'firecms';
 
 export const standardTheme = {
   backgroundColor: 'transparent',
@@ -718,4 +718,47 @@ export const iconImages = [
     link: "https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/icons%2Ficons_recon_zw.png?alt=media&token=e1cca1f8-cc3f-4067-a68f-f8cd57f4d14a",
     category: 'Education'
   }
+]
+
+export const chipColors : EnumValues = [
+  {id: "blueLighter", label: "Lighter blue", color: "blueLighter" },
+  {id: "cyanLighter", label: "Lighter cyan", color: "cyanLighter" },
+  {id: "tealLighter", label: "Lighter teal", color: "tealLighter" },
+  {id: "greenLighter", label: "Lighter green", color: "greenLighter" },
+  {id: "yellowLighter", label: "Lighter yellow", color: "yellowLighter" },
+  {id: "orangeLighter", label: "Lighter orange", color: "orangeLighter" },
+  {id: "redLighter", label: "Lighter red", color: "redLighter" },
+  {id: "pinkLighter", label: "Lighter pink", color: "pinkLighter" },
+  {id: "purpleLighter", label: "Lighter purple", color: "purpleLighter" },
+  {id: "grayLighter", label: "Lighter gray", color: "grayLighter" },
+  {id: "blueLight", label: "Light blue", color: "blueLight" },
+  {id: "cyanLight", label: "Light cyan", color: "cyanLight" },
+  {id: "tealLight", label: "Light teal", color: "tealLight" },
+  {id: "greenLight", label: "Light green", color: "greenLight" },
+  {id: "yellowLight", label: "Light yellow", color: "yellowLight" },
+  {id: "orangeLight", label: "Light orange", color: "orangeLight" },
+  {id: "redLight", label: "Light red", color: "redLight" },
+  {id: "pinkLight", label: "Light pink", color: "pinkLight" },
+  {id: "purpleLight", label: "Light purple", color: "purpleLight" },
+  {id: "grayLight", label: "Light gray", color: "grayLight" },
+  {id: "blueDark", label: "Dark blue", color: "blueDark" },
+  {id: "cyanDark", label: "Dark cyan", color: "cyanDark" },
+  {id: "tealDark", label: "Dark teal", color: "tealDark" },
+  {id: "greenDark", label: "Dark green", color: "greenDark" },
+  {id: "yellowDark", label: "Dark yellow", color: "yellowDark" },
+  {id: "orangeDark", label: "Dark orange", color: "orangeDark" },
+  {id: "redDark", label: "Dark red", color: "redDark" },
+  {id: "pinkDark", label: "Dark pink", color: "pinkDark" },
+  {id: "purpleDark", label: "Dark purple", color: "purpleDark" },
+  {id: "grayDark", label: "Dark gray", color: "grayDark" },
+  {id: "blueDarker", label: "Darker blue", color: "blueDarker" },
+  {id: "cyanDarker", label: "Darker cyan", color: "cyanDarker" },
+  {id: "tealDarker", label: "Darker teal", color: "tealDarker" },
+  {id: "greenDarker", label: "Darker green", color: "greenDarker" },
+  {id: "yellowDarker", label: "Darker yellow", color: "yellowDarker" },
+  {id: "orangeDarker", label: "Darker orange", color: "orangeDarker" },
+  {id: "redDarker", label: "Darker red", color: "redDarker" },
+  {id: "pinkDarker", label: "Darker pink", color: "pinkDarker" },
+  {id: "purpleDarker", label: "Darker purple", color: "purpleDarker" },
+  {id: "grayDarker", label: "Darker gray", color: "grayDarker" },
 ]

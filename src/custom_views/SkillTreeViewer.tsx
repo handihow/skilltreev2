@@ -102,11 +102,16 @@ export function SkillTreeViewer() {
         if (user && list.length > 0) {
             const [data, error4] = await getUserResults(user.id, list)
             if (error4) handleError(error4);
-            if (data) setData(data);
+            if (data) {
+                const selectedCount = countSelectedSkills(data);
+                setSelectedSkillCount(selectedCount);
+                setData(data);
+            };
             if (setLoadingIndicator) setIsLoading(false);
         } else if (list.length > 0) {
             setTimeout(() => {
                 setData([]);
+                setSelectedSkillCount(0);
                 if (setLoadingIndicator) setIsLoading(false);
             }, 100)
         }
@@ -118,9 +123,9 @@ export function SkillTreeViewer() {
 
     const handleSave = async (storage: ContextStorage, treeId: string, skills: SavedDataType) => {
         if (isLoading || !selectedUser) return;
-        const canSave = authController.user?.uid === composition?.user || composition?.loggedInUsersCanEdit;
+        const canSave = selectedUser.id === composition?.user || composition?.loggedInUsersCanEdit;
         if (!canSave) return handleError("Please ask your instructor to update the completion status of this skill. Changes will not be saved.");
-        const error = await saveUserResults(authController.user?.uid, treeId, composition?.id, skills, 0);
+        const error = await saveUserResults(selectedUser.id, treeId, composition?.id, skills, 0);
         if (error) return handleError(error, false);
         const index = skilltreesList.findIndex(st => st.id === treeId);
         data[index] = skills;
@@ -129,7 +134,15 @@ export function SkillTreeViewer() {
     }
 
     return (
-        <Box style={{ backgroundImage: `url(${url})`, backgroundPosition: 'center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', minHeight: '100%' }}>
+        <Box style={{
+            backgroundImage: `url(${url})`,
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            height: '100%',
+            width: '100%',
+            display: 'flex',
+            overflowY: 'auto'
+        }}>
             <Container maxWidth={"xl"}
                 sx={{
                     alignItems: "center",
@@ -142,11 +155,10 @@ export function SkillTreeViewer() {
                         <SkillTreeGroup theme={composition?.theme}>
                             {({ handleFilter, resetSkills }) => (
                                 <React.Fragment>
-                                    <Card sx={{ minWidth: 275, marginTop: 2, maxHeight: 275 }}>
+                                    <Card sx={{ marginTop: 2, alignSelf: 'flex-start' }}>
                                         <CardContent>
                                             <Typography variant="h6" component="div" sx={{ marginBottom: 3 }}>
-                                                Completed skills:
-                                                <span> {selectedSkillCount} / {skillCount}</span>
+                                                {composition?.title}
                                             </Typography>
                                             {isOwner &&
                                                 <Autocomplete
@@ -164,15 +176,20 @@ export function SkillTreeViewer() {
                                                     renderInput={(params) => <TextField {...params} label="User results" />}
                                                 />
                                             }
+                                            <Typography component="div" sx={{ marginTop: 3 }}>
+                                                Completed skills:
+                                                <span> {selectedSkillCount} / {skillCount}</span>
+                                            </Typography>
                                             <TextField sx={{ width: 300, marginTop: 3 }} id="text-field" label="Filter skills" onChange={(event: any) => handleFilter(event.target.value || "")} />
                                         </CardContent>
                                         <CardActions>
-                                            <AlertDialog 
-                                                agreeFunction={resetSkills} 
+                                            <AlertDialog
+                                                agreeFunction={resetSkills}
                                                 functionParams={undefined}
                                                 agreeBtnText="Yes, reset!"
                                                 openBtnText="Reset"
                                                 alertWarning="Are you sure that you want to reset the completion status of all skills?"
+                                                btnColor="error"
                                             />
                                             <Button aria-label="delete" size="small" onClick={() => backToOverview()}>
                                                 Back
@@ -186,6 +203,8 @@ export function SkillTreeViewer() {
                                             title={skilltree.title}
                                             data={skilltree.data}
                                             collapsible={skilltree.collapsible}
+                                            closedByDefault={skilltree.closedByDefault}
+                                            disabled={skilltree.disabled}
                                             description={skilltree.description}
                                             handleSave={handleSave}
                                             savedData={data[index]}

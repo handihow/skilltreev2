@@ -1,19 +1,22 @@
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton } from "@mui/material";
+import React from "react";
 import { useState } from "react";
-
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export function AlertDialog({
   agreeFunction,
   functionParams,
   openBtnText,
   agreeBtnText,
-  alertWarning
+  alertWarning,
+  btnColor
 }: {
   agreeFunction: Function,
   functionParams: any,
   openBtnText: string,
   agreeBtnText: string,
-  alertWarning: string
+  alertWarning: string,
+  btnColor: "inherit" | "primary" | "secondary" | "success" | "error" | "info" | "warning"
 }) {
 
   const [isOpen, setIsOpen] = useState(false);
@@ -36,9 +39,14 @@ export function AlertDialog({
     handleClose();
   };
   return (
-    <div>
+    <React.Fragment>
       {/* Button to trigger the opening of the dialog */}
-      <Button onClick={handleClickOpen}>{openBtnText}</Button>
+      {openBtnText === "icon" ?
+        <IconButton edge="end" aria-label="delete" onClick={handleClickOpen} color={btnColor}>
+          <DeleteIcon />
+        </IconButton>
+        :
+        <Button onClick={handleClickOpen} color={btnColor}>{openBtnText}</Button>}
       {/* Dialog that is displayed if the state open is true */}
       <Dialog
         open={isOpen}
@@ -58,12 +66,12 @@ export function AlertDialog({
           <Button onClick={handleDisagree} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleAgree} color="warning" autoFocus>
+          <Button onClick={handleAgree} color="error" autoFocus>
             {agreeBtnText}
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </React.Fragment>
   );
 
 }
