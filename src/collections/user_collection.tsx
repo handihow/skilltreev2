@@ -26,7 +26,7 @@ const rolesCollection = buildCollection({
 export type IUser = {
     uid?: string;
     email: string;
-    displayName: string;
+    displayName?: string;
     photoURL?: string;
     emailVerified: boolean;
     standardFeedback?: string;
@@ -44,11 +44,7 @@ export type IUser = {
 
 const userCallbacks = buildEntityCallbacks({
     onPreSave: ({
-        collection,
-        path,
-        entityId,
         values,
-        status
     }) => {
         // return the updated values
         if (values.organization) {
@@ -58,10 +54,7 @@ const userCallbacks = buildEntityCallbacks({
     },
 
     onFetch({
-        collection,
-        context,
         entity,
-        path,
     }: EntityOnFetchProps) {
         if (entity.values.organization) {
             entity.values.organization = new EntityReference(entity.values.organization, "organizations");
@@ -94,11 +87,9 @@ export function buildUsersCollection(organization?: string): EntityCollection<IU
                 name: "Email",
                 validation: { required: true },
                 dataType: "string",
-                readOnly: true
             },
             displayName: {
                 name: "Display name",
-                validation: { required: true },
                 dataType: "string"
             },
             emailVerified: {

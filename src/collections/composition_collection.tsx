@@ -25,11 +25,15 @@ export type IComposition = {
     loggedInUsersOnly?: boolean;
     loggedInUsersCanEdit?: boolean;
     canCopy?: boolean;
+    requireShareApproval?: boolean;
     sharedUsers?: string[];
+    pendingApprovalUsers?: string[];
     // sharedWith?: EntityReference[];
     lastUpdate?: any;
     url?: string;
     evaluationModel?: any;
+    gradeAllSkillsByDefault?: boolean;
+    pendingApproval?: boolean;
 }
 
 const compositionCallbacks = buildEntityCallbacks({
@@ -45,6 +49,9 @@ const compositionCallbacks = buildEntityCallbacks({
             values.sharedUsers = values.sharedUsers.map((su: EntityReference) => su.id);
             updateSharedUserStatus(values.sharedUsers, values.id, status);
         }
+        if(values.pendingApprovalUsers) {
+            values.pendingApprovalUsers = values.pendingApprovalUsers.map((su: EntityReference) => su.id);
+        }
         if(status !== "existing") {
             values.id = entityId;
         }
@@ -57,6 +64,9 @@ const compositionCallbacks = buildEntityCallbacks({
         entity.values.user = new EntityReference(entity.values.user, "users");
         if(entity.values.sharedUsers) {
             entity.values.sharedUsers = entity.values.sharedUsers.map((su: string) => new EntityReference(su, "users"))
+        }
+        if(entity.values.pendingApprovalUsers) {
+            entity.values.pendingApprovalUsers = entity.values.pendingApprovalUsers.map((su: string) => new EntityReference(su, "users"))
         }
         return entity;
     },
@@ -111,17 +121,30 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
             }),
             loggedInUsersOnly: {
                 name: "Logged in only",
+                description: "Only logged in users can view the SkillTree",
                 dataType: "boolean",
+                defaultValue: true,
                 columnWidth: 200
             },
             loggedInUsersCanEdit: {
                 name: "Logged in can edit",
+                description: "Logged in users can update the status of skills",
                 dataType: "boolean",
+                defaultValue: true,
                 columnWidth: 200
             },
             canCopy: {
                 name: "Can copy",
+                description: "Users can copy the SkillTree if it is shared",
                 dataType: "boolean",
+                defaultValue: false,
+                columnWidth: 200
+            },
+            requireShareApproval: {
+                name: "Share approvals",
+                description: "Your approval is needed before users can add to shared SkillTrees",
+                dataType: "boolean",
+                defaultValue: false,
                 columnWidth: 200
             },
             backgroundImage: ({ values }) => buildProperty({
@@ -314,11 +337,19 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
             }),
             evaluationModel: buildProperty({
                 name: "Evaluation model",
-                description: "Grade skills. Optional skills are not grades by default.",
+                description: "Grade skills with the selected evaluation model",
                 dataType: "reference",
                 path: "evaluation_models",
                 previewProperties: ["name", "type"],
             }),
+            gradeAllSkillsByDefault: ({values}) => {
+                return buildProperty({
+                    name: "Grade all skills",
+                    description: "Grade all skills by default using the selected evaluation model",
+                    dataType: "boolean",
+                    disabled: !values.evaluationModel
+                })
+            },
             lastUpdate: {
                 name: "Last update",
                 dataType: "date",

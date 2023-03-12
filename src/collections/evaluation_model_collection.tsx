@@ -7,6 +7,7 @@ type IEvaluationModel = {
     minimum?: number;
     maximum?: number;
     options?: any[];
+    repeatOption?: any;
 }
 
 export const evaluationModelCollection = buildCollection<IEvaluationModel>({
@@ -83,7 +84,7 @@ export const evaluationModelCollection = buildCollection<IEvaluationModel>({
                     },
                     description: {
                         name: "Description",
-                        description: "Description of the letter",
+                        description: "Description of the letter on the label",
                         validation: { required: true },
                         dataType: "string",
                     },
@@ -94,25 +95,57 @@ export const evaluationModelCollection = buildCollection<IEvaluationModel>({
                         dataType: "string",
                         enumValues: chipColors
                     },
-                    percentage: {
-                        name: "Percentage",
-                        description: "Percentage correlated to letter",
-                        validation: { required: true, min: 0, max: 100 },
+                    value: {
+                        name: "Calculating value",
+                        description: "Calculating value of the label",
+                        validation: { required: true },
                         dataType: "number",
                     },
                     minimum: {
-                        name: "Minimum",
-                        description: "Minimum percentage when percentage is calculated",
-                        validation: { required: true, min: 0, max: 100 },
+                        name: "Minimum value",
+                        description: "Minimum value of the label",
+                        validation: { required: true },
                         dataType: "number",
                     },
                     maximum: {
                         name: "Maximum",
-                        description: "Maximum percentage when percentage is calculated",
-                        validation: { required: true, min: 0, max: 100 },
+                        description: "Maximum value of the label",
+                        validation: { required: true },
                         dataType: "number",
+                    },
+                    valuePasses: {
+                        name: "Passes",
+                        description: "Label passes as completed / sufficient result",
+                        validation: { required: true },
+                        dataType: "boolean"
                     }
                 }
+            }
+        }),
+        repeatOption: buildProperty({
+            name: "Repeat option",
+            description: "Repeat can be assigned to students who have to repeat the assignment. No grade is given.",
+            dataType: "map",
+            properties: {
+                letter: {
+                    name: "Letter",
+                    description: "Letter that will be shown on the repeat label",
+                    validation: { required: true },
+                    dataType: "string"
+                },
+                description: {
+                    name: "Description",
+                    description: "Description of the letter on the repeat label",
+                    validation: { required: true },
+                    dataType: "string",
+                },
+                color: {
+                    name: "Color",
+                    description: "Color of the label",
+                    validation: { required: true },
+                    dataType: "string",
+                    enumValues: chipColors
+                },
             }
         }),
     }

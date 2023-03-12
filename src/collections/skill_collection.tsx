@@ -47,6 +47,7 @@ export type ISkill = {
     //properties to assist in loading into skills table
     compositionTitle?: string;
     table?: string;
+    gradeSkill?: boolean;
 }
 
 
@@ -167,11 +168,10 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
                 dataType: "number",
                 readOnly: true
             },
-            // countChildren: {
-            //     name: "Child skills",
-            //     dataType: "number",
-            //     readOnly: true
-            // }
+            gradeSkill: {
+                name: "Graded skill",
+                dataType: "boolean",
+            }
         },
         callbacks: skillCallbacks
     });

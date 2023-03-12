@@ -19,9 +19,11 @@ import { buildCompositionsCollection } from "./collections/composition_collectio
 import { organizationCollection } from "./collections/organization_collection";
 import { firebaseConfig } from "./firebase_config";
 import { skillsCollection } from "./collections/skill_collection";
+import { buildShareRequestCollection } from "./collections/share_request_collection";
 import { MySkillTreesView } from "./custom_views/MySkillTrees";
 import { SkillTreeViewer } from "./custom_views/SkillTreeViewer";
 import { SkillTreeEditor } from "./custom_views/SkillTreeEditor";
+import { ShareRequestsView } from "./custom_views/ShareRequests";
 import { IconButton, Tooltip } from "@mui/material";
 import { GitHub } from "@mui/icons-material";
 
@@ -39,7 +41,7 @@ const customViews: CMSView[] = [
         group: "Content",
         description: "Your SkillTrees",
         view: <MySkillTreesView view={"owned"} />,
-        icon: "Copyright"
+        icon: "Person"
     },
     {
         path: "shared-skilltrees",
@@ -47,7 +49,7 @@ const customViews: CMSView[] = [
         group: "Content",
         description: "SkillTrees shared with you",
         view: <MySkillTreesView view={"shared"} />,
-        icon: "Share"
+        icon: "People"
     },
     {
         path: "compositions/:id/viewer",
@@ -62,6 +64,13 @@ const customViews: CMSView[] = [
         hideFromNavigation: true,
         description: "SkillTree Editor",
         view: <SkillTreeEditor />
+    },
+    {
+        path: "share_requests/:id",
+        name: "Share requests",
+        hideFromNavigation: true,
+        description: "Share requests for composition",
+        view: <ShareRequestsView />
     }
 ];
 
@@ -99,20 +108,22 @@ export default function App() {
         const [organization, error2] = await getUserOrganization(user?.uid || "")
         if(error2) throw Error(error2)
         authController.setExtra({roles, organization});
-        if(roles && roles.includes("super")) {
+        if(roles && roles.includes("super") && user) {
             setCollections([
                 buildCompositionsCollection(false), 
                 buildUsersCollection(), 
                 evaluationModelCollection, 
                 organizationCollection, 
-                skillsCollection
+                skillsCollection,
+                buildShareRequestCollection("admin", user)
             ])
-        } else if(roles && roles.includes("admin")){
+        } else if(roles && roles.includes("admin") && user){
             setCollections([
                 buildCompositionsCollection(false, organization), 
                 buildUsersCollection(organization), 
                 evaluationModelCollection, 
-                skillsCollection
+                skillsCollection,
+                buildShareRequestCollection("admin", user)
             ])
         }
         return true;
@@ -124,7 +135,7 @@ export default function App() {
         views={customViews}
         collections={collections} 
         firebaseConfig={firebaseConfig}
-        signInOptions={['google.com', 'microsoft.com', 'password']}
+        signInOptions={['google.com', 'microsoft.com', 'password', 'anonymous']}
         toolbarExtraWidget={githubLink}
         logo="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTreeIcon.png?alt=media&token=af824f13-6bfd-46f9-9ec8-35ff020e95c6"
         logoDark="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTree_T_icon.png?alt=media&token=06b80792-f01a-4cfc-9de4-0f89f6d1b3c0"

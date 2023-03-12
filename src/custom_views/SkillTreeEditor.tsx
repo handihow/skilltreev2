@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
     SkillTreeGroup,
-    SkillTree,
     SkillProvider,
 } from "beautiful-skill-tree";
 import {
@@ -31,12 +30,11 @@ import { buildCompositionsCollection, IComposition } from "../collections/compos
 import { skilltreesCollection } from "../collections/skilltree_collection";
 import { ISkilltree } from "../collections/skilltree_collection"
 import { useNavigate, useParams } from "react-router";
-import { collection, collectionGroup, doc, onSnapshot, orderBy, query, where } from "firebase/firestore";
-import { ISkill, skillsCollection } from "../collections/skill_collection";
-import { skillArrayToSkillTree } from "../common/StandardFunctions";
+import { collection, doc, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Unsubscribe } from "firebase/auth";
 import AlertDialog from "./widgets/AlertDialog";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { SkillTreeWidget } from "./widgets/SkillTreeWidget";
 
 export function SkillTreeEditor() {
     // hook to display custom snackbars
@@ -51,9 +49,7 @@ export function SkillTreeEditor() {
     const authController = useAuthController();
     const storageSource = useStorageSource();
 
-    const [skilltreesListWithData, setSkilltreeListWithData] = useState<ISkilltree[]>([]);
     const [skilltreesList, setSkilltreeList] = useState<ISkilltree[]>([]);
-    const [skillsList, setSkillsList] = useState<ISkill[]>([]);
     const [composition, setComposition] = useState<IComposition | null>(null);
     const [url, setUrl] = useState("");
     const [subscriptions, setSubscriptions] = useState<Unsubscribe[]>([]);
@@ -102,11 +98,11 @@ export function SkillTreeEditor() {
         const skillTreeQuery = query(skillTreeColRef, orderBy("order", "asc"));
         const unsubscribe2 = onSnapshot(skillTreeQuery, {
             next: (snap) => {
-                setSkilltreeListWithData([]);
                 const skilltrees: ISkilltree[] = snap.docs.map(value => {
                     return { id: value.id, ...value.data() as ISkilltree }
                 });
                 setSkilltreeList(skilltrees);
+                setIsLoading(false);
             },
             error: (err) => {
                 handleError(err.message);
@@ -115,57 +111,14 @@ export function SkillTreeEditor() {
         setSubscriptions([...subscriptions, unsubscribe2]);
     }
 
-    const subscribeToSkillChanges = () => {
-        const skillsColRef = collectionGroup(db, 'skills');
-        const skillQuery = query(skillsColRef, where("composition", "==", id), orderBy("order"));
-        const unsubscribe3 = onSnapshot(skillQuery, {
-            next: async (snap) => {
-                setSkilltreeListWithData([]);
-                const skills: ISkill[] = [];
-                for (const doc of snap.docs) {
-                    const skill: ISkill = {
-                        parent: doc.ref.path.split("/"),
-                        path: doc.ref.path,
-                        ...(doc.data() as ISkill),
-                    };
-                    if (skill.image) {
-                        const resized = skill.image.split(".")[0] + "_128x128." + skill.image.split(".")[1];
-                        const config = await storageSource.getDownloadURL(resized);
-                        skill.icon = config.url;
-                    }
-                    skills.push(skill);
-                }
-                setSkillsList(skills);
-            },
-            error: (err) => {
-                handleError(err.message);
-            }
-        })
-        setSubscriptions([...subscriptions, unsubscribe3]);
-    }
 
     useEffect(() => {
         subscribeToCompositionChanges();
-        subscribeToSkillChanges();
         subscribeToSkilltreeChanges();
         return () => {
             subscriptions.forEach(unsubscribe => unsubscribe());
         }
     }, [])
-
-    useEffect(() => {
-        const skilltreesWithData = skilltreesList.map((skilltree: ISkilltree) => {
-            skilltree.data = skillArrayToSkillTree(
-                skillsList.filter((s: ISkill) => s.skilltree === skilltree.id),
-                true,
-                openSkillController,
-                deleteSkill
-            );
-            return skilltree;
-        });
-        setSkilltreeListWithData(skilltreesWithData);
-        if (isLoading) setIsLoading(false);
-    }, [skillsList, skilltreesList])
 
     const openSideController = (simple: boolean) => {
         sideEntityController.open({
@@ -175,20 +128,6 @@ export function SkillTreeEditor() {
         })
     }
 
-    const openSkillController = (id: string, mode?: string) => {
-        const skill = skillsList.find(s => s.id === id);
-        const pathAsArray = skill?.path?.split("/");
-        if (mode === "child") {
-            pathAsArray?.push("skills");
-        } else {
-            pathAsArray?.pop();
-        }
-        sideEntityController.open({
-            entityId: mode === "edit" ? id : undefined,
-            path: pathAsArray?.join("/") || "",
-            collection: skillsCollection
-        })
-    }
 
     const openSkilltreeController = (id?: string) => {
         sideEntityController.open({
@@ -196,13 +135,6 @@ export function SkillTreeEditor() {
             path: "compositions/" + composition?.id + "/skilltrees",
             collection: skilltreesCollection
         })
-    }
-
-    const deleteSkill = async ({ id }: { id: string }) => {
-        const skill = skillsList.find(s => s.id === id);
-        if (!skill?.path) return handleError("No skill path available");
-        const error = await deleteFromPathRecursively(skill.path, "Skills")
-        if (error) handleError(error, false);
     }
 
     const deleteSkilltree = async ({ id }: { id: string }) => {
@@ -273,7 +205,7 @@ export function SkillTreeEditor() {
                                                                 <ListItemText primary="Add tree" />
                                                             </ListItemButton>
                                                         </ListItem>
-                                                        {skilltreesListWithData.map((skilltree) => (
+                                                        {skilltreesList.map((skilltree) => (
                                                             <ListItem key={skilltree.id} secondaryAction={
                                                                 <AlertDialog
                                                                     agreeFunction={deleteSkilltree}
@@ -305,17 +237,15 @@ export function SkillTreeEditor() {
                                             </List>
                                         </CardContent>
                                     </Card>
-                                    {skilltreesListWithData.map((skilltree) => (
-                                        <SkillTree
+                                    {skilltreesList.map((skilltree) => (
+                                        <SkillTreeWidget
                                             key={skilltree.id}
-                                            treeId={skilltree.id || ""}
-                                            title={skilltree.title}
-                                            data={skilltree.data}
-                                            collapsible={skilltree.collapsible}
-                                            closedByDefault={skilltree.closedByDefault}
-                                            disabled={skilltree.disabled}
-                                            description={skilltree.description}
-                                        />))}
+                                            mode="editor"
+                                            skilltree={skilltree}
+                                            handleSave={undefined}
+                                            selectedUser={null}
+                                            handleNodeSelect={undefined}
+                                        ></SkillTreeWidget>))}
                                 </React.Fragment>
                             )}
                         </SkillTreeGroup>

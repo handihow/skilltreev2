@@ -1,7 +1,7 @@
 import {
-    buildCollection, buildEntityCallbacks, EntityOnDeleteProps,
+    buildCollection, buildEntityCallbacks, EntityOnDeleteProps, EntityOnSaveProps,
 } from "firecms";
-import { deleteSkillsOfSkilltree, getCountFromPath } from "../services/firestore";
+import { createSkilltreeSkills, deleteSkillsOfSkilltree, getCountFromPath } from "../services/firestore";
 import { skillsCollectionWithSubcollections } from "./skill_collection";
 import { MoveDownAction, MoveUpAction } from "../actions/move.actions";
 
@@ -48,6 +48,14 @@ const skilltreeCallbacks = buildEntityCallbacks({
     ) => {
         const error = await deleteSkillsOfSkilltree(entityId);
         if(error) throw new Error(error);
+    },
+    onSaveSuccess: async (props: EntityOnSaveProps<ISkilltree>) => {
+        if(props.status === "new") {
+            const split = props.path.split("/");
+            const compositionId = split.length ? split[1] : "";
+            const error = await createSkilltreeSkills(props.entityId || "", compositionId, false);
+            if(error) props.context.snackbarController.open({type: "error", message: error});
+        }
     },
 });
 

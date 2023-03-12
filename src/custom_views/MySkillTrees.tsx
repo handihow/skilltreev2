@@ -18,11 +18,14 @@ import {
     useSnackbarController,
 } from "firecms";
 
-import { addComposition, addOrRemoveSharedUser, deleteComposition, getCompositions } from "../services/firestore";
+import { addComposition, addOrRemovePendingApprovalUser, addOrRemoveSharedUser, db, deleteComposition, storage } from "../services/firestore";
 
 import { IComposition } from "../collections/composition_collection";
 import AlertDialog from "./widgets/AlertDialog";
 import { useNavigate } from "react-router-dom";
+import { buildShareRequestCollection } from "../collections/share_request_collection";
+import { collection, query, where, orderBy, onSnapshot, Unsubscribe } from "firebase/firestore";
+import { ref, getDownloadURL } from "firebase/storage";
 
 /**
  * Sample CMS view not bound to a collection, customizable by the developer
@@ -49,27 +52,72 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
 
     const initialList: IComposition[] = []
     const [compositionsList, setCompositionList] = useState(initialList);
+    const [pendingApprovalList, setPendingApprovalList] = useState(initialList);
+    const [subscriptions, setSubscriptions] = useState<Unsubscribe[]>([]);
 
     const [isLoading, setIsLoading] = useState(true);
 
-    const handleError = (error: string) => {
+    const handleError = (error: string, setLoading = true) => {
         snackbarController.open({
             type: "error",
             message: "Could not retrieve your compositions: " + error
         })
-        setIsLoading(false)
+        if(setLoading) setIsLoading(false)
     }
 
-    const initialize = async () => {
+    const initialize = async (initializer: "owned" | "shared" | "pending") => {
         if (!authController.user) return;
-        const [compositions, error] = await getCompositions(authController.user.uid, view);
-        if (error) return handleError(error);
-        setCompositionList(compositions || []);
-        setIsLoading(false);
+        const skillTreeColRef = collection(db, 'compositions');
+        let skillTreeQuery;
+        if (initializer === "owned") {
+            skillTreeQuery = query(skillTreeColRef, where("user", "==", authController.user.uid), orderBy("lastUpdate", "desc"));
+        } else if(initializer === "shared") {
+            skillTreeQuery = query(skillTreeColRef, where("sharedUsers", "array-contains", authController.user.uid), orderBy("lastUpdate", "desc"))
+        } else {
+            skillTreeQuery = query(skillTreeColRef, where("pendingApprovalUsers", "array-contains", authController.user.uid), orderBy("lastUpdate", "desc"))
+        }
+        const unsubscribe = onSnapshot(skillTreeQuery, {
+            next: async (snap) => {
+                const compositions: IComposition[] = []
+                for (const value of snap.docs) {
+                    let composition: IComposition = { id: value.id, ...value.data() as IComposition };
+                    if (composition.backgroundImage) {
+                        const resized = composition.backgroundImage.split(".")[0] + "_500x500." + composition.backgroundImage.split(".")[1];
+                        try {
+                            const reference = ref(storage, resized);
+                            composition.url = await getDownloadURL(reference);
+                        } catch (e) {
+                            console.log(e);
+                            composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
+                        }
+                    } else {
+                        composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
+                    }
+                    composition.pendingApproval = initializer === "pending";
+                    compositions.push(composition);
+                }
+                if(initializer === "pending") {
+                    setPendingApprovalList(compositions || []);
+                } else {
+                    setCompositionList(compositions || []);
+                }
+                setIsLoading(false);
+            },
+            error: (error) => {
+                console.log(error.message);
+                handleError(error.message);
+                setIsLoading(false);
+            }
+        });
+        setSubscriptions([...subscriptions, unsubscribe])
     }
 
     useEffect(() => {
-        initialize();
+        initialize(view);
+        if(view === "shared") initialize("pending");
+        return () => {
+            subscriptions.forEach(unsubscribe => unsubscribe());
+        }
     }, [])
 
     const add = async () => {
@@ -77,22 +125,33 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
         setIsLoading(true);
         const error = await addComposition(authController.user.uid, authController.user.email || "")
         if (error) return handleError(error);
-        initialize();
     };
+
+    const addShared = () => {
+        if(!authController.user) return handleError("You must be logged in to add shared compositions", false);
+        sideEntityController.open({
+            path: "share_requests",
+            collection: buildShareRequestCollection("requesting", authController.user),
+        })
+    }
 
     const del = async ({ id }: { id: string }) => {
         setIsLoading(true);
         const error = await deleteComposition(id);
         if (error) return handleError(error);
-        initialize();
     }
 
-    const removeSharedComposition = async ({ id }: { id: string }) => {
+    const removeSharedComposition = async ({ id, pendingApproval }: { id: string, pendingApproval: boolean }) => {
         if (!authController.user) return;
         setIsLoading(true);
-        const error = await addOrRemoveSharedUser(authController.user.uid, id, false)
-        if (error) return handleError(error);
-        initialize();
+        if(pendingApproval) {
+            const error = await addOrRemovePendingApprovalUser(authController.user.uid, id, false)
+            if (error) return handleError(error);
+        } else {
+            const error = await addOrRemoveSharedUser(authController.user.uid, id, false)
+            if (error) return handleError(error);
+        }
+        
     }
 
     return (
@@ -104,18 +163,21 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                 display="flex"
                 flexDirection={"column"}
                 alignItems={"center"}
-                justifyItems={"center"}>
+                justifyItems={"center"}
+            >
+
 
                 <Container maxWidth={"lg"}
                     sx={{
-                        my: 4
+                        my: 4,
                     }}>
-
-                    {isLoading ? <CircularProgress /> :
+                    {isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <CircularProgress />
+                    </div> :
 
                         <Grid container rowSpacing={5} columnSpacing={2}>
-                            {view === "owned" && <Grid item xs={12} sm={4} >
-                                <Card variant="outlined" sx={{ height: "100%", cursor: 'pointer' }} onClick={() => add()}>
+                            <Grid item xs={12} sm={4} >
+                                <Card variant="outlined" sx={{ height: "100%", cursor: 'pointer' }} onClick={view === "owned" ? add : addShared}>
                                     <CardMedia
                                         component="img"
                                         height="194"
@@ -124,18 +186,18 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                     />
                                     <CardContent>
                                         <Typography gutterBottom variant="h6" component="div">
-                                            Add New SkillTree
+                                            Add {view==="owned" ? "New" : "Shared"} SkillTree
                                         </Typography>
                                     </CardContent>
                                     <CardActions>
-                                        <Button onClick={() => add()} color="primary">
+                                        <Button onClick={view === "owned" ? add : addShared} color="primary">
                                             Add
                                         </Button>
                                     </CardActions>
                                 </Card>
-                            </Grid>}
+                            </Grid>
 
-                            {compositionsList.map(composition => (
+                            {compositionsList.concat(pendingApprovalList).map(composition => (
                                 <Grid item xs={12} sm={4} key={composition.id}>
                                     <Card variant="outlined" sx={{ height: "100%" }}>
                                         <CardMedia
@@ -148,18 +210,19 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                             <Typography gutterBottom variant="h6" component="div">
                                                 {composition.title}
                                             </Typography>
+                                            {composition.pendingApproval && <Typography component="div">Pending approval</Typography>}
                                         </CardContent>
                                         <CardActions>
-                                            
-                                            <Button onClick={() => viewSkillTree(composition.id || '')}>
+
+                                            {<Button onClick={() => viewSkillTree(composition.id || '')} disabled={composition.pendingApproval}>
                                                 View
-                                            </Button>
+                                            </Button>}
                                             {view === "owned" && <Button onClick={() => editorSkillTree(composition.id || '')}>
                                                 Edit
                                             </Button>}
                                             <AlertDialog
                                                 agreeFunction={view === "owned" ? del : removeSharedComposition}
-                                                functionParams={{ id: composition?.id || "" }}
+                                                functionParams={{ id: composition?.id || "", pendingApproval: composition.pendingApproval }}
                                                 agreeBtnText="Yes, delete!"
                                                 openBtnText="Delete"
                                                 alertWarning="Are you sure that you want to delete?"
@@ -170,9 +233,10 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                 </Grid>
                             ))}
 
-                        </Grid>}
-
+                        </Grid>
+                    }
                 </Container>
+
             </Box>
         </Box>
     );

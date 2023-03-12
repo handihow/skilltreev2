@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
     SkillTreeGroup,
-    SkillTree,
     SkillProvider,
     SavedDataType,
+    NodeSelectEvent,
 } from "beautiful-skill-tree";
 import {
     Autocomplete,
@@ -22,20 +22,17 @@ import {
 } from "firecms";
 import { IComposition } from "../collections/composition_collection";
 import { ISkilltree } from "../collections/skilltree_collection"
-import { getComposition, getCompositionSkilltrees, getSharedUsers, getUserResults, saveUserResults } from "../services/firestore"
+import { getComposition, getCompositionSkilltrees, getSharedUsers, saveUserResults } from "../services/firestore"
 import { useNavigate, useParams } from "react-router";
-import { ContextStorage } from "beautiful-skill-tree/dist/models";
 import { AutocompleteOption } from "../common/AutoCompleteOption.model";
-import { countSelectedSkills } from "../common/StandardFunctions";
 import { AlertDialog } from "./widgets/AlertDialog";
+import { SkillTreeWidget } from "./widgets/SkillTreeWidget";
+import { ISkill } from "../collections/skill_collection";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars
     const snackbarController = useSnackbarController();
     const navigate = useNavigate();
-    const backToOverview = () => {
-        navigate(-1);
-    }
     // hook to do operations related to authentication
     const authController = useAuthController();
     const storageSource = useStorageSource();
@@ -48,11 +45,8 @@ export function SkillTreeViewer() {
     const [isLoading, setIsLoading] = useState(true);
     const [isOwner, setIsOwner] = useState(false);
     const [users, setUsers] = useState<AutocompleteOption[]>([])
-    const initialAutocompleteOption: AutocompleteOption = { id: authController.user?.uid || "", label: authController.user?.displayName || "" };
+    const initialAutocompleteOption: AutocompleteOption = { id: authController.user?.uid || "", label: "Your own results" };
     const [selectedUser, setSelectedUser] = useState<AutocompleteOption | null>(initialAutocompleteOption);
-    const [data, setData] = useState<SavedDataType[]>([]);
-    const [skillCount, setSkillCount] = useState<number>(0);
-    const [selectedSkillCount, setSelectedSkillCount] = useState<number>(0);
 
     const { id } = useParams();
 
@@ -70,23 +64,19 @@ export function SkillTreeViewer() {
         if (error) return handleError(error);
         let url = '';
         if (composition?.backgroundImage) {
-            const config = await storageSource.getDownloadURL(composition.backgroundImage);
-            url = config.url;
+            try {
+                const config = await storageSource.getDownloadURL(composition.backgroundImage);
+                url = config.url;
+            } catch (e) {
+                console.log(e);
+            }
         }
-        const [skilltrees, skillCount, error2] = await getCompositionSkilltrees(id);
+        const [skilltrees, error2] = await getCompositionSkilltrees(id);
         if (error2) return handleError(error2);
-        const [labels, error3] = await getSharedUsers(id);
+        const [labels, error3] = await getSharedUsers(id, authController.user.uid);
         if (error3) return handleError(error3);
-        const [data, error4] = await getUserResults(authController.user?.uid, skilltrees)
-        if (error4) return handleError(error4);
-        if (labels) setUsers(labels);
+        if (labels) setUsers([initialAutocompleteOption, ...labels]);
         if (url) setUrl(url);
-        if (data) {
-            const selectedCount = countSelectedSkills(data);
-            setSelectedSkillCount(selectedCount);
-            setData(data);
-        }
-        if (skillCount) setSkillCount(skillCount);
         setSkilltreeList(skilltrees || []);
         setComposition(composition);
         setIsOwner(composition?.user === authController.user?.uid);
@@ -97,40 +87,23 @@ export function SkillTreeViewer() {
         initialize();
     }, [])
 
-    const getData = async (user: AutocompleteOption | null = null, list: ISkilltree[] = [], setLoadingIndicator = false) => {
-        if (setLoadingIndicator) setIsLoading(true);
-        if (user && list.length > 0) {
-            const [data, error4] = await getUserResults(user.id, list)
-            if (error4) handleError(error4);
-            if (data) {
-                const selectedCount = countSelectedSkills(data);
-                setSelectedSkillCount(selectedCount);
-                setData(data);
-            };
-            if (setLoadingIndicator) setIsLoading(false);
-        } else if (list.length > 0) {
-            setTimeout(() => {
-                setData([]);
-                setSelectedSkillCount(0);
-                if (setLoadingIndicator) setIsLoading(false);
-            }, 100)
-        }
-    }
-
-    useEffect(() => {
-        getData(selectedUser, skilltreesList, true);
-    }, [selectedUser])
-
-    const handleSave = async (storage: ContextStorage, treeId: string, skills: SavedDataType) => {
-        if (isLoading || !selectedUser) return;
-        const canSave = selectedUser.id === composition?.user || composition?.loggedInUsersCanEdit;
+    const handleSave = async (treeId: string, skills: SavedDataType) => {
+        const { user, extra: { roles = [] } } = authController;
+        if (isLoading || !user || !composition || !selectedUser) return;
+        const isAdmin = user.uid === composition?.user || roles.includes("admin") || roles.includes("super");
+        const canSave = isAdmin || composition?.loggedInUsersCanEdit;
         if (!canSave) return handleError("Please ask your instructor to update the completion status of this skill. Changes will not be saved.");
+        console.log('saving user results');
         const error = await saveUserResults(selectedUser.id, treeId, composition?.id, skills, 0);
         if (error) return handleError(error, false);
-        const index = skilltreesList.findIndex(st => st.id === treeId);
-        data[index] = skills;
-        const selectedSkillCount = countSelectedSkills(data);
-        setSelectedSkillCount(selectedSkillCount);
+    }
+
+
+    const handleNodeSelect = (skill: ISkill) => {
+        if(skill.gradeSkill || (!skill.gradeSkill && composition?.gradeAllSkillsByDefault)){
+            console.log('must open for editing the results');
+            console.log(skill);
+        }
     }
 
     return (
@@ -167,7 +140,7 @@ export function SkillTreeViewer() {
                                                         setSelectedUser(newValue);
                                                     }}
                                                     isOptionEqualToValue={(option, value) => {
-                                                        return option.id === value.id && option.label === value.label
+                                                        return option.id === value.id
                                                     }}
                                                     disablePortal
                                                     id="combo-box-demo"
@@ -176,10 +149,6 @@ export function SkillTreeViewer() {
                                                     renderInput={(params) => <TextField {...params} label="User results" />}
                                                 />
                                             }
-                                            <Typography component="div" sx={{ marginTop: 3 }}>
-                                                Completed skills:
-                                                <span> {selectedSkillCount} / {skillCount}</span>
-                                            </Typography>
                                             <TextField sx={{ width: 300, marginTop: 3 }} id="text-field" label="Filter skills" onChange={(event: any) => handleFilter(event.target.value || "")} />
                                         </CardContent>
                                         <CardActions>
@@ -191,24 +160,23 @@ export function SkillTreeViewer() {
                                                 alertWarning="Are you sure that you want to reset the completion status of all skills?"
                                                 btnColor="error"
                                             />
-                                            <Button aria-label="delete" size="small" onClick={() => backToOverview()}>
+                                            <Button aria-label="delete" size="small" onClick={() => navigate(-1)}>
                                                 Back
                                             </Button>
+                                            {composition?.pendingApprovalUsers?.length && composition.pendingApprovalUsers.length > 0 ?
+                                                <Button onClick={() => navigate("/share_requests/" + id)}>Approvals</Button> : <React.Fragment></React.Fragment>}
                                         </CardActions>
                                     </Card>
-                                    {skilltreesList.map((skilltree, index) => (
-                                        <SkillTree
+                                    {skilltreesList.map((skilltree) => (
+                                        <SkillTreeWidget
                                             key={skilltree.id}
-                                            treeId={skilltree.id || ""}
-                                            title={skilltree.title}
-                                            data={skilltree.data}
-                                            collapsible={skilltree.collapsible}
-                                            closedByDefault={skilltree.closedByDefault}
-                                            disabled={skilltree.disabled}
-                                            description={skilltree.description}
+                                            mode="viewer"
+                                            skilltree={skilltree}
                                             handleSave={handleSave}
-                                            savedData={data[index]}
-                                        />))}
+                                            selectedUser={selectedUser}
+                                            handleNodeSelect={handleNodeSelect}
+                                        ></SkillTreeWidget>
+                                    ))}
                                 </React.Fragment>
                             )}
                         </SkillTreeGroup>

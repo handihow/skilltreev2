@@ -38,7 +38,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore and get a reference to the service
 export const db = getFirestore(app);
 const functions = getFunctions(app);
-const storage = getStorage(app);
+export const storage = getStorage(app);
 
 export const getUserRoles = async (userId: string): Promise<[string[] | null, string | null]> => {
     const userRolesRef = collection(db, 'users/' + userId + '/roles')
@@ -59,7 +59,7 @@ export const getUserRoles = async (userId: string): Promise<[string[] | null, st
 }
 
 export const getUserOrganization = async (userId: string): Promise<[string | undefined, string | null]> => {
-    const userRef = doc(db, 'users', userId )
+    const userRef = doc(db, 'users', userId)
     try {
         const snap = await getDoc(userRef);
         if (!snap.exists()) return [undefined, "No user record found"]
@@ -70,14 +70,14 @@ export const getUserOrganization = async (userId: string): Promise<[string | und
     }
 }
 
-export const updateUser = async (user: User | null) : Promise<string | null> => {
-    if(!user) return "No user";
+export const updateUser = async (user: User | null): Promise<string | null> => {
+    if (!user) return "No user";
     const updatedUser = constructUser(user);
-    const userRef = doc(db, 'users', user.uid );
+    const userRef = doc(db, 'users', user.uid);
     try {
-        await setDoc(userRef, updatedUser, {merge: true});
+        await setDoc(userRef, updatedUser, { merge: true });
         return null;
-    } catch(err: any) {
+    } catch (err: any) {
         return err.message;
     }
 }
@@ -86,38 +86,38 @@ const constructUser = (user: User) => {
     let hostedDomain = "";
     const provider = user?.providerData[0]?.providerId || "password";
     if (
-      provider &&
-      provider === "google.com" &&
-      user.email &&
-      !["gmail.com", "googlemail.com"].includes(user.email.split("@").pop() || "")
+        provider &&
+        provider === "google.com" &&
+        user.email &&
+        !["gmail.com", "googlemail.com"].includes(user.email.split("@").pop() || "")
     ) {
-      hostedDomain = user.email.split("@").pop() || "";
+        hostedDomain = user.email.split("@").pop() || "";
     } else if (
-      provider &&
-      provider === "microsoft.com" &&
-      user.email &&
-      !["outlook.com", "live.com", "hotmail.com"].includes(
-        user.email.split("@").pop() || ""
-      )
+        provider &&
+        provider === "microsoft.com" &&
+        user.email &&
+        !["outlook.com", "live.com", "hotmail.com"].includes(
+            user.email.split("@").pop() || ""
+        )
     ) {
-      hostedDomain = user.email.split("@").pop() || "";
+        hostedDomain = user.email.split("@").pop() || "";
     }
     //create or update user record in firestore db
     const signedInUser: IUser = {
-      uid: user.uid,
-      email: user.email || "",
-      displayName: user.displayName || "",
-      photoURL: user.photoURL
-        ? user.photoURL
-        : `https://eu.ui-avatars.com/api/?name=${user.displayName}`,
-      emailVerified: user.emailVerified,
-      hostedDomain,
-      provider,
-      creationTime: user?.metadata?.creationTime || null,
-      lastSignInTime: user?.metadata?.lastSignInTime || null,
+        uid: user.uid,
+        email: user.email || "",
+        displayName: user.displayName || "",
+        photoURL: user.photoURL
+            ? user.photoURL
+            : `https://eu.ui-avatars.com/api/?name=${user.displayName}`,
+        emailVerified: user.emailVerified,
+        hostedDomain,
+        provider,
+        creationTime: user?.metadata?.creationTime || null,
+        lastSignInTime: user?.metadata?.lastSignInTime || null,
     };
     return signedInUser;
-  };
+};
 
 
 
@@ -127,11 +127,9 @@ export const addComposition = async (userId: string, email: string): Promise<str
             title: "My SkillTree",
             user: userId,
             username: email,
-            hasBackgroundImage: false,
             canCopy: false,
             loggedInUsersCanEdit: true,
             loggedInUsersOnly: true,
-            skillcount: 3,
             lastUpdate: Timestamp.now(),
         };
         const skillTreeColRef = collection(db, 'compositions');
@@ -146,23 +144,36 @@ export const addComposition = async (userId: string, email: string): Promise<str
         const skilltreeColRef = collection(db, 'compositions', composition.id, 'skilltrees');
         const skilltree = await addDoc(skilltreeColRef, newSkilltree);
         await updateDoc(skilltree, { id: skilltree.id });
-        const newRootSkill = {
-            skilltree: skilltree.id,
-            composition: composition.id,
-            ...standardRootSkill
-        };
-        const rootSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills');
-        const rootSkill = await addDoc(rootSkillColRef, newRootSkill);
-        await updateDoc(rootSkill, { id: rootSkill.id })
-        const childSkillColRef = collection(db, 'compositions', composition.id, 'skilltrees', skilltree.id, 'skills', rootSkill.id, 'skills');
-        for (const child of standardChildSkills) {
-            const childSkill = await addDoc(childSkillColRef, { skilltree: skilltree.id, composition: composition.id, ...child });
-            await updateDoc(childSkill, { id: childSkill.id })
-        }
+        const error = await createSkilltreeSkills(skilltree.id, composition.id, true);
+        if(error) return error;
         return;
     } catch (err: any) {
         return "Could not add skilltree: " + err.message;
     }
+}
+
+export const createSkilltreeSkills = async (skilltreeId: string, compositionId: string, withChildren: boolean) => {
+    try {
+        const newRootSkill = {
+            skilltree: skilltreeId,
+            composition: compositionId,
+            ...standardRootSkill
+        };
+        const rootSkillColRef = collection(db, 'compositions', compositionId, 'skilltrees', skilltreeId, 'skills');
+        const rootSkill = await addDoc(rootSkillColRef, newRootSkill);
+        await updateDoc(rootSkill, { id: rootSkill.id })
+        if(withChildren) {
+            const childSkillColRef = collection(db, 'compositions', compositionId, 'skilltrees', skilltreeId, 'skills', rootSkill.id, 'skills');
+            for (const child of standardChildSkills) {
+                const childSkill = await addDoc(childSkillColRef, { skilltree: skilltreeId, composition: compositionId, ...child });
+                await updateDoc(childSkill, { id: childSkill.id })
+            }
+        }
+        return;
+    } catch (err: any) {
+        return err.message as string;
+    }
+
 }
 
 export const deleteComposition = async (id: string): Promise<string | undefined> => {
@@ -191,7 +202,7 @@ export const deleteSkillsOfSkilltree = async (skilltreeId: string) => {
             await deleteDoc(doc.ref);
         }
         return;
-    } catch(err: any) {
+    } catch (err: any) {
         return err.message as string;
     }
 }
@@ -220,15 +231,15 @@ export const updateOrder = async (path: string, order: number) => {
 }
 
 
-export const updateSharedUserStatus = async ( sharedUserIds: string[], compositionId: string, status: EntityStatus) => {
+export const updateSharedUserStatus = async (sharedUserIds: string[], compositionId: string, status: EntityStatus) => {
     const compositionRef = doc(db, 'compositions', compositionId);
     try {
-        if(status === "existing"){
+        if (status === "existing") {
             const snap = await getDoc(compositionRef);
             const { sharedUsers = [] } = snap.data() as IComposition;
             for (const id of sharedUsers) {
                 const index = sharedUserIds.findIndex(sui => sui === id);
-                if(index === -1) {
+                if (index === -1) {
                     await addOrRemoveSharedUser(id, compositionId, false, false);
                 }
             }
@@ -237,11 +248,21 @@ export const updateSharedUserStatus = async ( sharedUserIds: string[], compositi
             await addOrRemoveSharedUser(userId, compositionId, true, false);
         }
         return;
-    } catch(err: any) {
+    } catch (err: any) {
         return err.message;
     }
 }
 
+export const addOrRemovePendingApprovalUser = async (userId: string, compositionId: string, add = true): Promise<string | undefined> => {
+    const docRef = doc(db, 'compositions', compositionId);
+    const pendingApprovalUsers = add ? arrayUnion(userId) : arrayRemove(userId);
+    try {
+        await setDoc(docRef, { pendingApprovalUsers }, { merge: true });
+    } catch (err: any) {
+        console.log(err);
+        return err.message as string;
+    }
+}
 
 export const addOrRemoveSharedUser = async (userId: string, compositionId: string, add = true, updateComposition = true): Promise<string | undefined> => {
     const docRef = doc(db, 'compositions', compositionId);
@@ -250,7 +271,7 @@ export const addOrRemoveSharedUser = async (userId: string, compositionId: strin
     const compositions = add ? arrayUnion(compositionId) : arrayRemove(compositionId);
     const userDocRef = doc(db, 'users', userId);
     try {
-        if(updateComposition) await setDoc(docRef, { sharedUsers }, {merge: true});
+        if (updateComposition) await setDoc(docRef, { sharedUsers }, { merge: true });
         const snap = await getDoc(userDocRef);
         const { email = "", displayName = "", photoURL = "" } = snap.data() as IUser;
         await setDoc(resultDocRef, {
@@ -263,39 +284,6 @@ export const addOrRemoveSharedUser = async (userId: string, compositionId: strin
     } catch (err: any) {
         console.log(err);
         return err.message as string;
-    }
-}
-
-export const getCompositions = async (userId: string, view: "owned" | "shared"): Promise<[IComposition[] | null, string | null]> => {
-    const skillTreeColRef = collection(db, 'compositions');
-    let skillTreeQuery;
-    if (view === "owned") {
-        skillTreeQuery = query(skillTreeColRef, where("user", "==", userId), orderBy("lastUpdate", "desc"));
-    } else {
-        skillTreeQuery = query(skillTreeColRef, where("sharedUsers", "array-contains", userId), orderBy("lastUpdate", "desc"))
-    }
-    try {
-        const snap = await getDocs(skillTreeQuery)
-        const compositions: IComposition[] = []
-        for (const value of snap.docs) {
-            let composition: IComposition = { id: value.id, ...value.data() as IComposition };
-            if (composition.backgroundImage) {
-                const resized = composition.backgroundImage.split(".")[0] + "_500x500." + composition.backgroundImage.split(".")[1];
-                try {
-                    const reference = ref(storage, resized);
-                    composition.url = await getDownloadURL(reference);
-                } catch (e) {
-                    console.log(e);
-                    composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
-                }
-            } else {
-                composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
-            }
-            compositions.push(composition);
-        }
-        return [compositions, null];
-    } catch (e: any) {
-        return [null, e.message as string];
     }
 }
 
@@ -314,7 +302,7 @@ export const getComposition = async (id: string): Promise<[IComposition | null, 
     }
 }
 
-export const getCompositionSkilltrees = async (id: string): Promise<[ISkilltree[] | null, number, string | null]> => {
+export const getCompositionSkilltrees = async (id: string): Promise<[ISkilltree[] | null, string | null]> => {
     const skillTreeColRef = collection(db, 'compositions', id, 'skilltrees');
     const skillTreeQuery = query(skillTreeColRef, orderBy("order", "asc"));
     try {
@@ -322,39 +310,13 @@ export const getCompositionSkilltrees = async (id: string): Promise<[ISkilltree[
         const skilltrees: ISkilltree[] = snap.docs.map(value => {
             return { id: value.id, ...value.data() as ISkilltree }
         })
-        const skillsColRef = collectionGroup(db, 'skills');
-        const skillQuery = query(skillsColRef, where("composition", "==", id), orderBy("order"));
-        const skillSnap = await getDocs(skillQuery);
-        const skills: ISkill[] = [];
-        for (const doc of skillSnap.docs) {
-            const skill: ISkill = {
-                parent: doc.ref.path.split("/"),
-                path: doc.ref.path,
-                ...(doc.data() as ISkill),
-            };
-            if (skill.image) {
-                const resized = skill.image.split(".")[0] + "_128x128." + skill.image.split(".")[1];
-                const reference = ref(storage, resized);
-                skill.icon = await getDownloadURL(reference);
-            }
-            skills.push(skill);
-        }
-
-        skilltrees.forEach((skilltree) => {
-            skilltree.data = skillArrayToSkillTree(
-                skills.filter((s: ISkill) => s.skilltree === skilltree.id),
-                false,
-                () => {},
-                () => {}
-            );
-        });
-        return [skilltrees, skillSnap.docs.length, null];
+        return [skilltrees, null];
     } catch (e: any) {
-        return [null, 0, e.message as string];
+        return [null, e.message as string];
     }
 }
 
-export const getSharedUsers = async (id: string): Promise<[AutocompleteOption[] | null, string | null]> => {
+export const getSharedUsers = async (id: string, userId: string): Promise<[AutocompleteOption[] | null, string | null]> => {
     const resultColRef = collection(db, 'results');
     const resultQuery = query(resultColRef, where('compositions', 'array-contains', id), orderBy('displayName'));
     try {
@@ -365,23 +327,20 @@ export const getSharedUsers = async (id: string): Promise<[AutocompleteOption[] 
         const labels = snap.docs.map(d => {
             return { id: d.id, label: d.data().displayName } as AutocompleteOption;
         });
+        const ownLabelIndex = labels.findIndex(l => l.id === userId);
+        if (ownLabelIndex > -1) labels.splice(ownLabelIndex, 1);
         return [labels, null];
     } catch (e: any) {
         return [null, e.message as string];
     }
 }
 
-export const getUserResults = async (userId: string | null, skilltrees: ISkilltree[] | null): Promise<[SavedDataType[] | null, string | null]> => {
-    if (!skilltrees || !userId) return [null, null];
-    const data: SavedDataType[] = [];
+export const getUserResults = async (userId: string, skilltree: ISkilltree): Promise<[SavedDataType | null, string | null]> => {
     try {
-        for (const skilltree of skilltrees) {
-            const resultRef = doc(db, 'results', userId, 'skilltrees', skilltree?.id || '');
-            const result = await getDoc(resultRef);
-            const resultObj = result.exists() ? result.data()?.skills : {}
-            data.push(resultObj);
-        }
-        return [data, null];
+        const resultRef = doc(db, 'results', userId, 'skilltrees', skilltree?.id || '');
+        const result = await getDoc(resultRef);
+        const resultObj = result.exists() ? result.data()?.skills : {}
+        return [resultObj, null];
     } catch (e: any) {
         return [null, e.message as string];
     }
