@@ -1,4 +1,4 @@
-import { buildCollection, buildEntityCallbacks, buildProperty, EntityCollection, EntityOnFetchProps, EntityReference, User, useSnackbarController } from "firecms";
+import { buildCollection, buildEntityCallbacks, buildProperty, EntityCollection, EntityOnFetchProps, EntityReference, User } from "firecms";
 import { addOrRemovePendingApprovalUser, addOrRemoveSharedUser, getComposition } from "../services/firestore";
 
 type IShareRequest = {
@@ -52,7 +52,7 @@ export function buildShareRequestCollection(mode: "requesting" | "approving" | "
             entity,
         }: EntityOnFetchProps) {
             if(entity.values.requester) entity.values.requester = new EntityReference(entity.values.requester, "users");
-            if(entity.values.approver) entity.values.approver = new EntityReference(entity.values.requester, "users");
+            if(entity.values.approver) entity.values.approver = new EntityReference(entity.values.approver, "users");
             entity.values.composition = new EntityReference(entity.values.composition, "compositions");
             return entity;
         },
@@ -115,6 +115,13 @@ export function buildShareRequestCollection(mode: "requesting" | "approving" | "
                 dataType: "boolean",
                 name: "Approved?"
             },
+            approver: buildProperty({
+                dataType: "reference",
+                path: "users",
+                name: "Approved by",
+                previewProperties: ["displayName", "email"],
+                readOnly: true
+            }),
             approvalComment: {
                 dataType: "string",
                 name: "Comment (not required)"

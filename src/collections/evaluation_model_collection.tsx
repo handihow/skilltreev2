@@ -1,13 +1,16 @@
 import { buildCollection, buildProperty } from "firecms";
 import { chipColors } from "../common/StandardData";
 
-type IEvaluationModel = {
+export type IEvaluationModel = {
+    id?: string;
     name: string;
-    type: string;
+    type: "numerical" | "percentage" | "letter";
     minimum?: number;
     maximum?: number;
     options?: any[];
     repeatOption?: any;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export const evaluationModelCollection = buildCollection<IEvaluationModel>({
@@ -15,7 +18,7 @@ export const evaluationModelCollection = buildCollection<IEvaluationModel>({
     description: "Manage evaluation models",
     singularName: "Evaluation model",
     path: "evaluation_models",
-    group: "Administration",
+    group: "Grades",
     icon: "Grading",
     permissions: ({ authController }) => ({
         edit: authController.extra?.roles?.includes('super'),
@@ -148,5 +151,17 @@ export const evaluationModelCollection = buildCollection<IEvaluationModel>({
                 },
             }
         }),
+        createdAt: buildProperty({
+            dataType: "date",
+            name: "Created at",
+            autoValue: "on_create",
+            readOnly: true
+        }),
+        updatedAt: buildProperty({
+            dataType: "date",
+            name: "Updated at",
+            autoValue: "on_update",
+            readOnly: true
+        })
     }
 });

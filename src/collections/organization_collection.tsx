@@ -1,4 +1,4 @@
-import { buildCollection, buildEntityCallbacks, buildProperty, EntityReference } from "firecms";
+import { buildCollection, buildProperty } from "firecms";
 
 type IOrganization = {
     name: string;
@@ -7,6 +7,8 @@ type IOrganization = {
     city: string;
     country: string;
     contacts?: any[];
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export const organizationCollection = buildCollection<IOrganization>({
@@ -58,5 +60,17 @@ export const organizationCollection = buildCollection<IOrganization>({
             },
             expanded: false
         }),
+        createdAt: buildProperty({
+            dataType: "date",
+            name: "Created at",
+            autoValue: "on_create",
+            readOnly: true
+        }),
+        updatedAt: buildProperty({
+            dataType: "date",
+            name: "Updated at",
+            autoValue: "on_update",
+            readOnly: true
+        })
     }
 });

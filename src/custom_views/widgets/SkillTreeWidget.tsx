@@ -119,7 +119,6 @@ function SkillTreeWithData({
 
     const openSkillController = (id: string, mode?: string) => {
         const skill = skills.find(s => s.id === id);
-        console.log(skill);
         const pathAsArray = skill?.path?.split("/");
         if (mode === "child") {
             pathAsArray?.push("skills");

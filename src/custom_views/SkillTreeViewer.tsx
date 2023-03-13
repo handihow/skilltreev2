@@ -3,7 +3,6 @@ import {
     SkillTreeGroup,
     SkillProvider,
     SavedDataType,
-    NodeSelectEvent,
 } from "beautiful-skill-tree";
 import {
     Autocomplete,
@@ -18,16 +17,18 @@ import {
     Typography,
 } from "@mui/material";
 import {
-    useAuthController, useSnackbarController, useStorageSource,
+    useAuthController, useSideEntityController, useSnackbarController, useStorageSource,
 } from "firecms";
 import { IComposition } from "../collections/composition_collection";
 import { ISkilltree } from "../collections/skilltree_collection"
-import { getComposition, getCompositionSkilltrees, getSharedUsers, saveUserResults } from "../services/firestore"
+import { getComposition, getCompositionSkilltrees, getEvaluationModel, getSharedUsers, saveUserResults } from "../services/firestore"
 import { useNavigate, useParams } from "react-router";
 import { AutocompleteOption } from "../common/AutoCompleteOption.model";
 import { AlertDialog } from "./widgets/AlertDialog";
 import { SkillTreeWidget } from "./widgets/SkillTreeWidget";
 import { ISkill } from "../collections/skill_collection";
+import { IEvaluationModel } from "../collections/evaluation_model_collection";
+import { buildEvaluationsCollection } from "../collections/evaluation_collection";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars
@@ -36,14 +37,15 @@ export function SkillTreeViewer() {
     // hook to do operations related to authentication
     const authController = useAuthController();
     const storageSource = useStorageSource();
+    const sideEntityController = useSideEntityController();
 
     const initialList: ISkilltree[] = []
     const [skilltreesList, setSkilltreeList] = useState(initialList);
     const [composition, setComposition] = useState<IComposition | null>(null);
     const [url, setUrl] = useState("");
+    const [evaluationModel, setEvaluationModel] = useState<IEvaluationModel | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
-    const [isOwner, setIsOwner] = useState(false);
     const [users, setUsers] = useState<AutocompleteOption[]>([])
     const initialAutocompleteOption: AutocompleteOption = { id: authController.user?.uid || "", label: "Your own results" };
     const [selectedUser, setSelectedUser] = useState<AutocompleteOption | null>(initialAutocompleteOption);
@@ -62,8 +64,9 @@ export function SkillTreeViewer() {
         if (!authController.user || !id) return;
         const [composition, error] = await getComposition(id);
         if (error) return handleError(error);
+        if(!composition) return handleError("Could not find the composition");
         let url = '';
-        if (composition?.backgroundImage) {
+        if (composition.backgroundImage) {
             try {
                 const config = await storageSource.getDownloadURL(composition.backgroundImage);
                 url = config.url;
@@ -71,15 +74,19 @@ export function SkillTreeViewer() {
                 console.log(e);
             }
         }
-        const [skilltrees, error2] = await getCompositionSkilltrees(id);
-        if (error2) return handleError(error2);
-        const [labels, error3] = await getSharedUsers(id, authController.user.uid);
+        if(composition.evaluationModel) {
+            const [evaluationModel, _error2] = await getEvaluationModel(composition.evaluationModel);
+            if(evaluationModel) setEvaluationModel(evaluationModel);
+
+        }
+        const [skilltrees, error3] = await getCompositionSkilltrees(id);
         if (error3) return handleError(error3);
+        const [labels, error4] = await getSharedUsers(id, authController.user.uid);
+        if (error4) return handleError(error4);
         if (labels) setUsers([initialAutocompleteOption, ...labels]);
         if (url) setUrl(url);
         setSkilltreeList(skilltrees || []);
         setComposition(composition);
-        setIsOwner(composition?.user === authController.user?.uid);
         setIsLoading(false);
     }
 
@@ -87,23 +94,33 @@ export function SkillTreeViewer() {
         initialize();
     }, [])
 
+    const { user, extra: { roles = [] } } = authController;
+    const isAdmin = user?.uid === composition?.user || roles.includes("admin") || roles.includes("super");
+
     const handleSave = async (treeId: string, skills: SavedDataType) => {
-        const { user, extra: { roles = [] } } = authController;
         if (isLoading || !user || !composition || !selectedUser) return;
-        const isAdmin = user.uid === composition?.user || roles.includes("admin") || roles.includes("super");
         const canSave = isAdmin || composition?.loggedInUsersCanEdit;
         if (!canSave) return handleError("Please ask your instructor to update the completion status of this skill. Changes will not be saved.");
-        console.log('saving user results');
         const error = await saveUserResults(selectedUser.id, treeId, composition?.id, skills, 0);
         if (error) return handleError(error, false);
     }
 
 
-    const handleNodeSelect = (skill: ISkill) => {
-        if(skill.gradeSkill || (!skill.gradeSkill && composition?.gradeAllSkillsByDefault)){
-            console.log('must open for editing the results');
-            console.log(skill);
-        }
+    const handleAdminNodeSelect = (skill: ISkill) => {
+        if(!selectedUser || !skill.path) return;
+        if(skill.gradeSkill === "not_graded") return;
+        if(!composition?.gradeAllSkillsByDefault) return;
+        if(!evaluationModel) return handleError("You must set an evaluation model to grade this skill", false);
+        console.log(evaluationModel);
+        sideEntityController.open({
+            path: skill.path + "/evaluations",
+            collection: buildEvaluationsCollection(evaluationModel, authController.user?.uid, selectedUser.id),
+        })
+        
+    }
+
+    const handleStudentNodeSelect = (skill: ISkill) => {
+        console.log(skill)
     }
 
     return (
@@ -133,7 +150,7 @@ export function SkillTreeViewer() {
                                             <Typography variant="h6" component="div" sx={{ marginBottom: 3 }}>
                                                 {composition?.title}
                                             </Typography>
-                                            {isOwner &&
+                                            {isAdmin &&
                                                 <Autocomplete
                                                     value={selectedUser}
                                                     onChange={(event: any, newValue: AutocompleteOption | null) => {
@@ -174,7 +191,7 @@ export function SkillTreeViewer() {
                                             skilltree={skilltree}
                                             handleSave={handleSave}
                                             selectedUser={selectedUser}
-                                            handleNodeSelect={handleNodeSelect}
+                                            handleNodeSelect={isAdmin ? handleAdminNodeSelect : handleStudentNodeSelect}
                                         ></SkillTreeWidget>
                                     ))}
                                 </React.Fragment>

@@ -1,5 +1,5 @@
 import {
-    buildCollection, buildEntityCallbacks, EntityOnDeleteProps, EntityOnSaveProps,
+    buildCollection, buildEntityCallbacks, buildProperty, EntityOnDeleteProps, EntityOnSaveProps,
 } from "firecms";
 import { createSkilltreeSkills, deleteSkillsOfSkilltree, getCountFromPath } from "../services/firestore";
 import { skillsCollectionWithSubcollections } from "./skill_collection";
@@ -24,6 +24,8 @@ export type ISkilltree = {
     decorators?: any;
     countChildren?: number;
     path?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 const skilltreeCallbacks = buildEntityCallbacks({
@@ -108,7 +110,19 @@ export const skilltreesCollection = buildCollection<ISkilltree>({
             name: "Order",
             dataType: "number",
             readOnly: true
-        }
+        },
+        createdAt: buildProperty({
+            dataType: "date",
+            name: "Created at",
+            autoValue: "on_create",
+            readOnly: true
+        }),
+        updatedAt: buildProperty({
+            dataType: "date",
+            name: "Updated at",
+            autoValue: "on_update",
+            readOnly: true
+        })
     },
     callbacks: skilltreeCallbacks
 });

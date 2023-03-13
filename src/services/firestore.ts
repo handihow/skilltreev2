@@ -16,21 +16,21 @@ import {
     Timestamp,
     updateDoc,
     where,
-    deleteDoc
+    deleteDoc,
+    DocumentReference
 } from "firebase/firestore";
 import { firebaseConfig } from "../firebase_config";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { getDownloadURL, getStorage, ref } from "firebase/storage";
+import { getStorage } from "firebase/storage";
 import { IComposition } from "../collections/composition_collection";
 import { ISkilltree } from "../collections/skilltree_collection";
-import { ISkill } from "../collections/skill_collection";
-import { skillArrayToSkillTree } from "../common/StandardFunctions";
 import { AutocompleteOption } from "../common/AutoCompleteOption.model";
 import { SavedDataType } from "beautiful-skill-tree";
 import { IUser } from "../collections/user_collection";
 import { standardRootSkill, standardChildSkills } from "../common/StandardData";
 import { User } from "firebase/auth";
 import { EntityStatus } from "firecms";
+import { IEvaluationModel } from "../collections/evaluation_model_collection";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -302,6 +302,20 @@ export const getComposition = async (id: string): Promise<[IComposition | null, 
     }
 }
 
+export const getEvaluationModel = async(docRef: DocumentReference) : Promise<[IEvaluationModel | null, string | null]> => {
+    try {
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+            const evaluationModel = { id: snap.id, ...snap.data() } as IEvaluationModel;
+            return [evaluationModel, null];
+        } else {
+            return [null, "No evaluation model found"]
+        }
+    } catch (e: any) {
+        return [null, e.message as string];
+    }
+}
+
 export const getCompositionSkilltrees = async (id: string): Promise<[ISkilltree[] | null, string | null]> => {
     const skillTreeColRef = collection(db, 'compositions', id, 'skilltrees');
     const skillTreeQuery = query(skillTreeColRef, orderBy("order", "asc"));
@@ -335,16 +349,6 @@ export const getSharedUsers = async (id: string, userId: string): Promise<[Autoc
     }
 }
 
-export const getUserResults = async (userId: string, skilltree: ISkilltree): Promise<[SavedDataType | null, string | null]> => {
-    try {
-        const resultRef = doc(db, 'results', userId, 'skilltrees', skilltree?.id || '');
-        const result = await getDoc(resultRef);
-        const resultObj = result.exists() ? result.data()?.skills : {}
-        return [resultObj, null];
-    } catch (e: any) {
-        return [null, e.message as string];
-    }
-}
 
 export const saveUserResults = async (userId: string | undefined, treeId: string, compositionId: string | undefined, skills: SavedDataType, progress: number) => {
     if (!userId || !compositionId) return "Not enough information to store results";

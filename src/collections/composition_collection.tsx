@@ -34,6 +34,7 @@ export type IComposition = {
     evaluationModel?: any;
     gradeAllSkillsByDefault?: boolean;
     pendingApproval?: boolean;
+    createdAt?: Date;
 }
 
 const compositionCallbacks = buildEntityCallbacks({
@@ -355,7 +356,13 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
                 dataType: "date",
                 readOnly: true,
                 autoValue: "on_update"
-            }
+            },
+            createdAt: buildProperty({
+                dataType: "date",
+                name: "Created at",
+                autoValue: "on_create",
+                readOnly: true
+            })
         },
         callbacks: compositionCallbacks
     });

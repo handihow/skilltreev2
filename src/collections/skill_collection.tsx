@@ -47,7 +47,9 @@ export type ISkill = {
     //properties to assist in loading into skills table
     compositionTitle?: string;
     table?: string;
-    gradeSkill?: boolean;
+    gradeSkill?: "default" | "not_graded" | "graded";
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 
@@ -170,8 +172,34 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
             },
             gradeSkill: {
                 name: "Graded skill",
-                dataType: "boolean",
-            }
+                dataType: "string",
+                enumValues: [
+                    {
+                        id: "default",
+                        label: "Set by parent"
+                    },
+                    {
+                        id: "not_graded",
+                        label: "Do not grade"
+                    },
+                    {
+                        id: "graded",
+                        label: "Graded skill"
+                    }
+                ]
+            },
+            createdAt: buildProperty({
+                dataType: "date",
+                name: "Created at",
+                autoValue: "on_create",
+                readOnly: true
+            }),
+            updatedAt: buildProperty({
+                dataType: "date",
+                name: "Updated at",
+                autoValue: "on_update",
+                readOnly: true
+            })
         },
         callbacks: skillCallbacks
     });
