@@ -26,6 +26,7 @@ export const evaluationModelCollection = buildCollection<IEvaluationModel>({
         // we have created the roles object in the navigation builder
         delete: authController.extra?.roles?.includes('super')
     }),
+    defaultSize: "s",
     properties: {
         name: {
             name: "Name",

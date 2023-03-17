@@ -18,6 +18,7 @@ export const organizationCollection = buildCollection<IOrganization>({
     path: "organizations",
     group: "Administration",
     icon: "CorporateFare",
+    defaultSize: "s",
     permissions: ({ authController }) => ({
         edit: true,
         create: true,

@@ -1,5 +1,6 @@
 import { buildCollection, buildEntityCallbacks, buildProperty, EntityCollection, EntityOnFetchProps, EntityReference, User } from "firecms";
-import { addOrRemovePendingApprovalUser, addOrRemoveSharedUser, getComposition } from "../services/firestore";
+import { getComposition } from "../services/composition.service";
+import { addOrRemoveSharedUser, addOrRemovePendingApprovalUser } from "../services/user.service";
 
 type IShareRequest = {
     composition: any;
@@ -62,6 +63,7 @@ export function buildShareRequestCollection(mode: "requesting" | "approving" | "
         name: "Share requests",
         description: "Manage share requests",
         singularName: "Share request",
+        defaultSize: "s",
         path: "share_requests",
         group: "Administration",
         icon: "Share",

@@ -21,7 +21,6 @@ import {
 } from "firecms";
 import { IComposition } from "../collections/composition_collection";
 import { ISkilltree } from "../collections/skilltree_collection"
-import { getComposition, getCompositionSkilltrees, getEvaluationModel, getSharedUsers, saveUserResults } from "../services/firestore"
 import { useNavigate, useParams } from "react-router";
 import { AutocompleteOption } from "../common/AutoCompleteOption.model";
 import { AlertDialog } from "./widgets/AlertDialog";
@@ -29,6 +28,9 @@ import { SkillTreeWidget } from "./widgets/SkillTreeWidget";
 import { ISkill } from "../collections/skill_collection";
 import { IEvaluationModel } from "../collections/evaluation_model_collection";
 import { buildEvaluationsCollection } from "../collections/evaluation_collection";
+import { getComposition, getCompositionSkilltrees } from "../services/composition.service";
+import { getEvaluationModel, getEvaluatedSkill } from "../services/evaluation.service";
+import { getSharedUsers, saveUserResults } from "../services/user.service";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars
@@ -106,17 +108,21 @@ export function SkillTreeViewer() {
     }
 
 
-    const handleAdminNodeSelect = (skill: ISkill) => {
+    const handleAdminNodeSelect = async (skill: ISkill) => {
         if(!selectedUser || !skill.path) return;
-        if(skill.gradeSkill === "not_graded") return;
-        if(!composition?.gradeAllSkillsByDefault) return;
-        if(!evaluationModel) return handleError("You must set an evaluation model to grade this skill", false);
-        console.log(evaluationModel);
+        if(!evaluationModel) return handleError("You must set an evaluation model to grade this skill. Check the SkillTree settings.", false);
+        if(skill.gradeSkill === "not_graded") return handleError("This skill is not graded. Check the SkillTree settings.", false);
+        if(!composition?.gradeAllSkillsByDefault && skill.gradeSkill !== "graded") return handleError("This skill is not graded. Check the SkillTree settings.", false);
+        const split = skill.path.split("/");
+        const compositionId = split.length ? split[1] : "";
+        const skilltreeId = split.length ? split[3] : "";
+        const [id, error] = await getEvaluatedSkill(selectedUser.id, skill.id || "");
+        if(error) handleError(error);
         sideEntityController.open({
-            path: skill.path + "/evaluations",
-            collection: buildEvaluationsCollection(evaluationModel, authController.user?.uid, selectedUser.id),
+            entityId: id ? id : undefined,
+            path: "evaluations",
+            collection: buildEvaluationsCollection("evaluations", evaluationModel, authController.user?.uid, selectedUser.id, compositionId, skilltreeId, skill.id),
         })
-        
     }
 
     const handleStudentNodeSelect = (skill: ISkill) => {
@@ -192,6 +198,7 @@ export function SkillTreeViewer() {
                                             handleSave={handleSave}
                                             selectedUser={selectedUser}
                                             handleNodeSelect={isAdmin ? handleAdminNodeSelect : handleStudentNodeSelect}
+                                            isAdmin={isAdmin}
                                         ></SkillTreeWidget>
                                     ))}
                                 </React.Fragment>

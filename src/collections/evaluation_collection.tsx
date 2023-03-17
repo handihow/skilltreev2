@@ -1,4 +1,6 @@
-import { buildCollection, buildEntityCallbacks, buildProperties, EntityCollection, EntityOnFetchProps, EntityReference, EnumValueConfig } from "firecms";
+import { buildCollection, buildEntityCallbacks, buildProperties, buildProperty, EntityCollection, EntityOnFetchProps, EntityOnSaveProps, EntityReference, EnumValueConfig } from "firecms";
+import { getSkillPath } from "../services/composition.service";
+import { addEvaluationToHistory } from "../services/evaluation.service";
 import { IEvaluationModel } from "./evaluation_model_collection";
 
 export type IEvaluation = {
@@ -20,14 +22,19 @@ export type IEvaluation = {
 }
 
 export function buildEvaluationsCollection(
-    evaluationModel: IEvaluationModel, 
+    path: "evaluations" | "history",
+    evaluationModel?: IEvaluationModel, 
     teacherId?: string,
-    studentId?: string
+    studentId?: string,
+    compositionId?: string,
+    skilltreeId?: string,
+    skillId?: string,
 ): EntityCollection<IEvaluation> {
-    
+    const subcollections = evaluationModel || path === "history" ? [] : [
+        buildEvaluationsCollection("history"),
+    ];
     const evaluationCallbacks = buildEntityCallbacks({
         onPreSave: ({
-            path,
             values,
             status
         }) => {
@@ -35,21 +42,38 @@ export function buildEvaluationsCollection(
             if(status ==="new") {
                 values.student = studentId || "";
                 values.teacher = teacherId || "";
-                const split = path.split("/");
-                values.composition = split.length ? split[1] : "";
-                values.skilltree = split.length ? split[3] : "";
-                values.skill = split.length ? split[split.length - 2] : "";
-                values.evaluationModel = evaluationModel.id || "";
+                values.composition = compositionId || "";
+                values.skilltree = skilltreeId || "";
+                values.skill = skillId || "";
+                values.evaluationModel = evaluationModel?.id || "";
+            } else {
+                values.student = values.student.id;
+                values.teacher = values.teacher.id;
+                values.evaluationModel = values.evaluationModel.id;
             }
             return values;
         },
+
+        onSaveSuccess: (props: EntityOnSaveProps<IEvaluation>) => {
+            const savedEvaluation = {id: props.entityId, ...props.values} as IEvaluation;
+            addEvaluationToHistory(savedEvaluation);
+        },
         
-        onFetch({
+        async onFetch({
             entity,
         }: EntityOnFetchProps) {
-            entity.values.student = new EntityReference(entity.values.student, "users");
-            entity.values.teacher = new EntityReference(entity.values.teacher, "users");
-            entity.values.evaluationModel = new EntityReference(entity.values.evaluationModel, "evaluation_models")
+            if(entity.values.student) entity.values.student = new EntityReference(entity.values.student, "users");
+            if(entity.values.teacher) entity.values.teacher = new EntityReference(entity.values.teacher, "users");
+            if(entity.values.evaluationModel) entity.values.evaluationModel = new EntityReference(entity.values.evaluationModel, "evaluation_models");
+            if(entity.values.skill) {
+                const [path, error] = await getSkillPath(entity.values.skill);
+                console.log(path);
+                if(error) throw new Error(error);
+                if(!path) throw new Error("Skill path not found")
+                const split = path.split("/");
+                split.pop()
+                entity.values.skill = new EntityReference(entity.values.skill, split.join("/"))
+            }
             return entity;
         },
     });
@@ -58,9 +82,11 @@ export function buildEvaluationsCollection(
         type: {
             name: "Type",
             validation: { required: true },
-            readOnly: true,
+            disabled: {
+                hidden: true
+            },
             dataType: "string",
-            defaultValue: evaluationModel.type,
+            defaultValue: evaluationModel?.type,
             enumValues: [
                 { id: "numerical", label: "Numerical grades", color: "blueDark" },
                 { id: "percentage", label: "Percentage grades 0-100%", color: "greenLight" },
@@ -69,46 +95,89 @@ export function buildEvaluationsCollection(
         }
     });
 
-    switch (evaluationModel.type) {
-        case "numerical":
-            properties.grade = {
-                name: "Grade",
-                validation: {
-                    required: true,
-                    min: evaluationModel.minimum,
-                    max: evaluationModel.maximum
-                },
-                dataType: "number",
-            }
-            break;
-        case "percentage":
-            properties.percentage = {
-                name: "Percentage",
-                validation: {
-                    required: true,
-                    min: 0,
-                    max: 100,
-                    integer: true
-                },
-                dataType: "number",
-            }
-            break;
-        case "letter":
-            const enumValues = evaluationModel.options?.map(v => {
-                return {id: v.letter, label: v.description, color: v.color} as EnumValueConfig;
-            })
-            properties.letter = {
-                name: "Result",
-                validation: {
-                    required: true
-                },
-                dataType: "string",
-                enumValues
-            }
-            break;
-        default:
-            break;
+    const gradeProp = buildProperty({
+        name: "Grade",
+        validation: {
+            required: evaluationModel ? true : false,
+            min: evaluationModel?.minimum,
+            max: evaluationModel?.maximum
+        },
+        dataType: "number",
+    });
+
+    const percProp = buildProperty({
+        name: "Percentage",
+        validation: {
+            required: evaluationModel ? true : false,
+            min: 0,
+            max: 100,
+            integer: true
+        },
+        dataType: "number",
+    });
+
+    const enumValues = evaluationModel?.options?.map(v => {
+        return {id: v.letter, label: v.description, color: v.color} as EnumValueConfig;
+    })
+
+    const letterProp = buildProperty({
+        name: "Result",
+        validation: {
+            required: evaluationModel ? true : false
+        },
+        dataType: "string",
+        enumValues
+    });
+
+    if(evaluationModel) {
+        switch (evaluationModel.type) {
+            case "numerical":
+                properties.grade = gradeProp;
+                break;
+            case "percentage":
+                properties.percentage = percProp;
+                break;
+            case "letter":
+                
+                properties.letter = letterProp;
+                break;
+            default:
+                break;
+        }
+    } else {
+        properties.skill = {
+            name: "Skill",
+            dataType: "reference",
+            path: "skills",
+            previewProperties: ["title"],
+            readOnly: true
+        }
+        properties.grade = gradeProp;
+        properties.percentage = percProp;
+        properties.letter = letterProp;
+        properties.student = {
+            name: "Student",
+            dataType: "reference",
+            path: "users",
+            previewProperties: ["displayName", "email"],
+            readOnly: true
+        };
+        properties.teacher = {
+            name: "Teacher",
+            dataType: "reference",
+            path: "users",
+            previewProperties: ["displayName", "email"],
+            readOnly: true
+        }
+        properties.evaluationModel = {
+            name: "Evaluation model",
+            dataType: "reference",
+            path: "evaluation_models",
+            previewProperties: ["name"],
+            readOnly: true
+        }
     }
+    
 
     properties.repeat = {
         name: "Repeat",
@@ -121,16 +190,35 @@ export function buildEvaluationsCollection(
         dataType: "string"
     }
 
+    properties.createdAt = buildProperty({
+        dataType: "date",
+        name: "Created at",
+        autoValue: "on_create",
+        disabled: {
+            hidden: true
+        }
+    });
+    properties.updatedAt = buildProperty({
+        dataType: "date",
+        name: "Updated at",
+        autoValue: "on_update",
+        disabled: {
+            hidden: true
+        }
+    });
+
     return buildCollection<IEvaluation>({
-        name: "Evaluations",
-        description: "Manage evaluations",
-        singularName: "Evaluation",
-        path: "evaluations",
+        name: path === "evaluations" ? "Evaluations" : "History",
+        description: path === "evaluations" ? "Manage evaluations" : undefined,
+        singularName: path === "evaluations" ? "Evaluation" : "History",
+        path,
+        defaultSize: "s",
         group: "Grades",
         icon: "Grading",
+        subcollections,
         permissions: ({ authController }) => ({
-            edit: !authController.extra?.roles?.includes('student'),
-            create: !authController.extra?.roles?.includes('student'),
+            edit: !authController.extra?.roles?.includes('student') && path !== "history",
+            create: !authController.extra?.roles?.includes('student') && path !== "history",
             // we have created the roles object in the navigation builder
             delete: authController.extra?.roles?.includes('super')
         }),

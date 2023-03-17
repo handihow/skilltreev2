@@ -8,17 +8,17 @@ import {
     FirebaseCMSApp,
 } from "firecms";
 
-import { getUserOrganization, getUserRoles, updateUser } from "./services/firestore";
 import { loadFonts } from "./services/fonts";
 loadFonts();
 import "typeface-rubik";
 import "@fontsource/ibm-plex-mono";
 
+import { getUserOrganization, getUserRoles, updateUser } from "./services/user.service";
+
 import { buildUsersCollection } from "./collections/user_collection";
 import { buildCompositionsCollection } from "./collections/composition_collection";
 import { organizationCollection } from "./collections/organization_collection";
 import { firebaseConfig } from "./firebase_config";
-import { skillsCollection } from "./collections/skill_collection";
 import { buildShareRequestCollection } from "./collections/share_request_collection";
 import { MySkillTreesView } from "./custom_views/MySkillTrees";
 import { SkillTreeViewer } from "./custom_views/SkillTreeViewer";
@@ -31,6 +31,8 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { fab } from '@fortawesome/free-brands-svg-icons'
 import { evaluationModelCollection } from "./collections/evaluation_model_collection";
+import { buildEvaluationsCollection } from "./collections/evaluation_collection";
+import { ShareSkillTreeView } from "./custom_views/ShareSkillTree";
 library.add(fas)
 library.add(fab)
 
@@ -41,7 +43,7 @@ const customViews: CMSView[] = [
         group: "Content",
         description: "Your SkillTrees",
         view: <MySkillTreesView view={"owned"} />,
-        icon: "Person"
+        icon: "Nature"
     },
     {
         path: "shared-skilltrees",
@@ -49,7 +51,7 @@ const customViews: CMSView[] = [
         group: "Content",
         description: "SkillTrees shared with you",
         view: <MySkillTreesView view={"shared"} />,
-        icon: "People"
+        icon: "NaturePeople"
     },
     {
         path: "compositions/:id/viewer",
@@ -64,6 +66,13 @@ const customViews: CMSView[] = [
         hideFromNavigation: true,
         description: "SkillTree Editor",
         view: <SkillTreeEditor />
+    },
+    {
+        path: "compositions/:id/share",
+        name: "Share SkillTree",
+        hideFromNavigation: true,
+        description: "Share SkillTree",
+        view: <ShareSkillTreeView />
     },
     {
         path: "share_requests/:id",
@@ -105,6 +114,7 @@ export default function App() {
         const error = await updateUser(user);
         if(error) throw Error(error);
         const [roles, error1] = await getUserRoles(user?.uid || "")
+        // if(error1) throw Error(error1)
         const [organization, error2] = await getUserOrganization(user?.uid || "")
         if(error2) throw Error(error2)
         authController.setExtra({roles, organization});
@@ -112,18 +122,20 @@ export default function App() {
             setCollections([
                 buildCompositionsCollection(false), 
                 buildUsersCollection(), 
+                buildShareRequestCollection("admin", user),
                 evaluationModelCollection, 
-                organizationCollection, 
-                skillsCollection,
-                buildShareRequestCollection("admin", user)
+                buildEvaluationsCollection("evaluations"),
+                organizationCollection,
             ])
-        } else if(roles && roles.includes("admin") && user){
+        } else if(roles && roles.includes("admin") && organization){
             setCollections([
                 buildCompositionsCollection(false, organization), 
                 buildUsersCollection(organization), 
-                evaluationModelCollection, 
-                skillsCollection,
-                buildShareRequestCollection("admin", user)
+                evaluationModelCollection,
+            ])
+        } else if(roles && roles.includes("admin")){
+            setCollections([
+                evaluationModelCollection,
             ])
         }
         return true;
@@ -144,7 +156,5 @@ export default function App() {
         fontFamily="Nunito"
     />;
 }
-function getUserRecord(arg0: string): [any, any] | PromiseLike<[any, any]> {
-    throw new Error("Function not implemented.");
-}
+
 

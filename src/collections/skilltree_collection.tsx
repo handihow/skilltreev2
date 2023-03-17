@@ -1,9 +1,10 @@
 import {
     buildCollection, buildEntityCallbacks, buildProperty, EntityOnDeleteProps, EntityOnSaveProps,
 } from "firecms";
-import { createSkilltreeSkills, deleteSkillsOfSkilltree, getCountFromPath } from "../services/firestore";
+import { getCountFromPath } from "../services/firestore";
 import { skillsCollectionWithSubcollections } from "./skill_collection";
 import { MoveDownAction, MoveUpAction } from "../actions/move.actions";
+import { deleteSkillsOfSkilltree, createSkilltreeSkills } from "../services/composition.service";
 
 export type ISkilltree = {
     id?: string
@@ -81,6 +82,7 @@ export const skilltreesCollection = buildCollection<ISkilltree>({
         skillsCollectionWithSubcollections
     ],
     inlineEditing: false,
+    defaultSize: "s",
     properties: {
         title: {
             name: "Title",

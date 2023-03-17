@@ -35,7 +35,7 @@ export type IUser = {
     creationTime?: any;
     lastSignInTime?: any;
     type?: string;
-    organization?: string;
+    organizations?: string[];
     subjects?: string;
     groups?: string;
     programs?: string;
@@ -47,8 +47,8 @@ const userCallbacks = buildEntityCallbacks({
         values,
     }) => {
         // return the updated values
-        if (values.organization) {
-            values.organization = values.organization.id;
+        if (values.organizations) {
+            values.organizations = values.organizations.map((o: { id: any; }) => o.id);
         }
         return values;
     },
@@ -56,8 +56,8 @@ const userCallbacks = buildEntityCallbacks({
     onFetch({
         entity,
     }: EntityOnFetchProps) {
-        if (entity.values.organization) {
-            entity.values.organization = new EntityReference(entity.values.organization, "organizations");
+        if (entity.values.organizations) {
+            entity.values.organizations = entity.values.organizations.map((o: string) => new EntityReference(o, "organizations"));
         }
         return entity;
     },
@@ -70,6 +70,7 @@ export function buildUsersCollection(organization?: string): EntityCollection<IU
         singularName: "User",
         path: "users",
         group: "Administration",
+        defaultSize: "s",
         subcollections: [
             rolesCollection
         ],
@@ -81,7 +82,7 @@ export function buildUsersCollection(organization?: string): EntityCollection<IU
             // we have created the roles object in the navigation builder
             delete: false
         }),
-        forceFilter: organization ? { organization: ["==", organization] } : undefined,
+        forceFilter: organization ? { organizations: ["array-contains", organization] } : undefined,
         properties: {
             email: {
                 name: "Email",
@@ -120,11 +121,14 @@ export function buildUsersCollection(organization?: string): EntityCollection<IU
             //     name: "Type",
             //     dataType: "string"
             // },
-            organization: {
-                name: "Organization",
-                dataType: "reference",
-                path: "organizations",
-                previewProperties: ["name"]
+            organizations: {
+                name: "Organizations",
+                dataType: "array",
+                of: {
+                    dataType: "reference",
+                    path: "organizations",
+                    previewProperties: ["name"]
+                }
             },
             // subjects: {
             //     dataType: "array",

@@ -128,7 +128,6 @@ export function SkillTreeEditor() {
         })
     }
 
-
     const openSkilltreeController = (id?: string) => {
         sideEntityController.open({
             entityId: id,
@@ -245,6 +244,7 @@ export function SkillTreeEditor() {
                                             handleSave={undefined}
                                             selectedUser={null}
                                             handleNodeSelect={undefined}
+                                            isAdmin={true}
                                         ></SkillTreeWidget>))}
                                 </React.Fragment>
                             )}

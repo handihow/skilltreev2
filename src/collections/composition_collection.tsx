@@ -11,8 +11,8 @@ import { SkillThemeType } from "beautiful-skill-tree";
 import { skilltreesCollection } from "./skilltree_collection";
 import { colors, gradients } from "../common/StandardData";
 import { getLoadedFonts } from "../services/fonts";
-import { updateSharedUserStatus } from "../services/firestore";
 import { ViewSkillTreeAction } from "../actions/viewST.actions";
+import { updateSharedUserStatus } from "../services/user.service";
 
 export type IComposition = {
     id?: string;
@@ -44,7 +44,6 @@ const compositionCallbacks = buildEntityCallbacks({
         status
     }) => {
         // return the updated values
-        console.log(status);
         values.user = values.user.id;
         if(values.sharedUsers) {
             values.sharedUsers = values.sharedUsers.map((su: EntityReference) => su.id);
@@ -83,7 +82,8 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
         description: "Manage all SkillTrees",
         singularName: "SkillTree",
         path: "compositions",
-        group: "Content",
+        group: "Administration",
+        defaultSize: "s",
         // views: simple ? [] : [skillTreeViewer],
         Actions: [ViewSkillTreeAction],
         inlineEditing: false,
@@ -116,7 +116,7 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
                     dataType: "reference",
                     path: "users",
                     previewProperties: ["displayName", "email"],
-                    forceFilter: organization ? { organization: ["==", organization] } : undefined
+                    forceFilter: organization ? { organizations: ["array-contains", organization] } : undefined
                 },
                 expanded: false
             }),

@@ -1,7 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button, ButtonGroup, Chip } from '@mui/material';
-import { useSideEntityController } from 'firecms';
 import AlertDialog from '../custom_views/widgets/AlertDialog';
 
 export default function SkillContent(props: {
@@ -9,7 +8,7 @@ export default function SkillContent(props: {
     optional: any;
     description: any;
     links: any[];
-    onEditorPage: boolean;
+    view: "editor" | "teacher" | "student" ;
     openSkillControllerFunc: Function;
     deleteSkillFunc: Function;
 }) {
@@ -32,7 +31,7 @@ export default function SkillContent(props: {
                     </li>
                 ))}
             </ul>
-            {props.onEditorPage &&
+            {props.view === "editor" &&
                 <ButtonGroup variant="contained" size="small" aria-label="contained small button group">
                     <Button aria-label="edit" onClick={() => props.openSkillControllerFunc(props.id, "edit")} color="primary">
                         Edit
@@ -55,7 +54,19 @@ export default function SkillContent(props: {
                         btnColor='error'
                     ></AlertDialog>
                 </ButtonGroup>
-               
+            }
+            {props.view === "teacher" &&
+                <ButtonGroup variant="contained" size="small" aria-label="contained small button group">
+                    <Button aria-label="grade" onClick={() => props.openSkillControllerFunc(props.id, "grade")} color="primary">
+                        Grade
+                    </Button>
+                    <Button aria-label="feedback" onClick={() => props.openSkillControllerFunc(props.id, "feedback")} color="secondary">
+                        Feedback
+                    </Button>
+                    <Button aria-label="feedback" onClick={() => props.openSkillControllerFunc(props.id, "schedule")} color="success">
+                        Schedule
+                    </Button>
+                </ButtonGroup>
             }
         </React.Fragment>
     )

@@ -15,13 +15,15 @@ export function SkillTreeWidget({
     skilltree,
     handleSave,
     selectedUser,
-    handleNodeSelect
+    handleNodeSelect,
+    isAdmin
 }: {
     mode: "viewer" | "editor"
     skilltree: ISkilltree,
     handleSave: Function | undefined,
     selectedUser: AutocompleteOption | null,
-    handleNodeSelect: Function | undefined
+    handleNodeSelect: Function | undefined,
+    isAdmin: boolean
 }) {
 
     const snackbarController = useSnackbarController();
@@ -82,6 +84,7 @@ export function SkillTreeWidget({
             selectedUser={selectedUser}
             skills={skillsList}
             handleNodeSelect={handleNodeSelect}
+            isAdmin={isAdmin}
         />
     }
 }
@@ -92,14 +95,16 @@ function SkillTreeWithData({
     handleSave,
     selectedUser,
     skills,
-    handleNodeSelect
+    handleNodeSelect,
+    isAdmin
 }: {
     mode: "viewer" | "editor"
     skilltree: ISkilltree,
     handleSave: Function | undefined,
     selectedUser: AutocompleteOption | null,
     skills: ISkill[],
-    handleNodeSelect: Function | undefined
+    handleNodeSelect: Function | undefined,
+    isAdmin: boolean
 }) {
 
     
@@ -117,19 +122,42 @@ function SkillTreeWithData({
         if (setLoadingToFalse) setIsLoading(false);
     }
 
-    const openSkillController = (id: string, mode?: string) => {
+    const openSkillController = (id: string, mode: "edit" |  "child" | "sibling" | "grade" | "feedback" | "schedule") => {
         const skill = skills.find(s => s.id === id);
         const pathAsArray = skill?.path?.split("/");
-        if (mode === "child") {
-            pathAsArray?.push("skills");
-        } else {
-            pathAsArray?.pop();
+        switch (mode) {
+            case "edit":
+                pathAsArray?.pop();
+                sideEntityController.open({
+                    entityId: id,
+                    path: pathAsArray?.join("/") || "",
+                    collection: skillsCollection
+                });
+                break;
+            case "child":
+                pathAsArray?.push("skills");
+                sideEntityController.open({
+                    entityId: undefined,
+                    path: pathAsArray?.join("/") || "",
+                    collection: skillsCollection
+                });
+                break;
+            case "sibling":
+                pathAsArray?.pop();
+                sideEntityController.open({
+                    entityId: undefined,
+                    path: pathAsArray?.join("/") || "",
+                    collection: skillsCollection
+                });
+                break;
+            case "grade":
+                if(handleNodeSelect) {
+                    handleNodeSelect(skill);
+                }
+            default:
+                break;
         }
-        sideEntityController.open({
-            entityId: mode === "edit" ? id : undefined,
-            path: pathAsArray?.join("/") || "",
-            collection: skillsCollection
-        })
+        
     }
 
 
@@ -144,7 +172,7 @@ function SkillTreeWithData({
     const transformSkills = (skills: ISkill[]) => {
         const transformedSkills = skillArrayToSkillTree(
             skills,
-            mode === "editor",
+            mode === "editor" ? "editor" : isAdmin ? "teacher" : "student",
             openSkillController,
             deleteSkill
         );

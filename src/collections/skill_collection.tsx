@@ -91,7 +91,7 @@ const skillCallbacks = buildEntityCallbacks({
 
 function skillsCollectionBuilder(level: number, hasSubcollections: boolean, description: string | undefined): EntityCollection<ISkill> {
     let subcollections: EntityCollection<ISkill>[] | undefined;
-    if (level < 5 && hasSubcollections) {
+    if (level < 10 && hasSubcollections) {
         subcollections = [skillsCollectionBuilder(level + 1, true, undefined)];
     }
     return buildCollection<ISkill>({
@@ -104,6 +104,7 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
         initialSort: hasSubcollections ? ["order", "asc"] : undefined,
         icon: "FormatListBulleted",
         inlineEditing: false,
+        defaultSize: "s",
         permissions: ({ authController }) => {
             const isStudent = authController.extra?.roles.includes("student");
             return ({

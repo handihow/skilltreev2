@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
     Box,
     Button,
+    IconButton,
     Card,
     CardActions,
     CardContent,
@@ -18,7 +19,8 @@ import {
     useSnackbarController,
 } from "firecms";
 
-import { addComposition, addOrRemovePendingApprovalUser, addOrRemoveSharedUser, db, deleteComposition, storage } from "../services/firestore";
+import { db, storage } from "../services/firestore";
+import { addComposition, deleteComposition, copyComposition } from "../services/composition.service";
 
 import { IComposition } from "../collections/composition_collection";
 import AlertDialog from "./widgets/AlertDialog";
@@ -26,7 +28,11 @@ import { useNavigate } from "react-router-dom";
 import { buildShareRequestCollection } from "../collections/share_request_collection";
 import { collection, query, where, orderBy, onSnapshot, Unsubscribe } from "firebase/firestore";
 import { ref, getDownloadURL } from "firebase/storage";
-
+import { addOrRemovePendingApprovalUser, addOrRemoveSharedUser } from "../services/user.service";
+import PreviewIcon from '@mui/icons-material/Preview';
+import EditIcon from '@mui/icons-material/Edit';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ShareIcon from '@mui/icons-material/Share';
 /**
  * Sample CMS view not bound to a collection, customizable by the developer
  * @constructor
@@ -36,14 +42,10 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
     // hook to display custom snackbars
     const snackbarController = useSnackbarController();
     const navigate = useNavigate();
-    const viewSkillTree = (id: string) => {
-        navigate("/compositions/" + id + '/viewer');
-    }
 
-    const editorSkillTree = (id: string) => {
-        navigate("/compositions/" + id + '/editor');
+    const navigateToSkillTree = (id: string, view: "viewer" | "editor" | "share") => {
+        navigate("/compositions/" + id + '/' + view);
     }
-
     // hook to open the side dialog that shows the entity forms
     const sideEntityController = useSideEntityController();
 
@@ -141,6 +143,12 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
         if (error) return handleError(error);
     }
 
+    const copy = ({id} : {id: string}) => {
+        const composition = compositionsList.find(c => c.id === id);
+        if(!composition || !authController.user) return;
+        copyComposition(composition, authController.user.uid, authController.user.email || "");
+    }
+
     const removeSharedComposition = async ({ id, pendingApproval }: { id: string, pendingApproval: boolean }) => {
         if (!authController.user) return;
         setIsLoading(true);
@@ -213,18 +221,37 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                             {composition.pendingApproval && <Typography component="div">Pending approval</Typography>}
                                         </CardContent>
                                         <CardActions>
-
-                                            {<Button onClick={() => viewSkillTree(composition.id || '')} disabled={composition.pendingApproval}>
+{/* 
+                                            {<Button onClick={() => navigateToSkillTree(composition.id || '', "viewer")} disabled={composition.pendingApproval}>
                                                 View
                                             </Button>}
-                                            {view === "owned" && <Button onClick={() => editorSkillTree(composition.id || '')}>
+                                            {view === "owned" && <Button onClick={() => navigateToSkillTree(composition.id || '', "editor")}>
                                                 Edit
                                             </Button>}
+                                            {(view === "owned" || composition.canCopy) && <Button onClick={() => copy({id: composition.id || ''})}>
+                                                Copy
+                                            </Button>}
+                                            {(view === "owned") && <Button onClick={() => navigateToSkillTree(composition.id || '', "share")}>
+                                                Share
+                                            </Button>} */}
+
+                                            {<IconButton onClick={() => navigateToSkillTree(composition.id || '', "viewer")} disabled={composition.pendingApproval}>
+                                                <PreviewIcon />
+                                            </IconButton>}
+                                            {view === "owned" && <IconButton onClick={() => navigateToSkillTree(composition.id || '', "editor")}>
+                                                <EditIcon />
+                                            </IconButton>}
+                                            {(view === "owned" || composition.canCopy) && <IconButton onClick={() => copy({id: composition.id || ''})}>
+                                                <ContentCopyIcon />
+                                            </IconButton>}
+                                            {(view === "owned") && <IconButton onClick={() => navigateToSkillTree(composition.id || '', "share")}>
+                                                <ShareIcon />
+                                            </IconButton>}
                                             <AlertDialog
                                                 agreeFunction={view === "owned" ? del : removeSharedComposition}
                                                 functionParams={{ id: composition?.id || "", pendingApproval: composition.pendingApproval }}
                                                 agreeBtnText="Yes, delete!"
-                                                openBtnText="Delete"
+                                                openBtnText="icon"
                                                 alertWarning="Are you sure that you want to delete?"
                                                 btnColor="error"
                                             />
