@@ -22,7 +22,7 @@ export type IComposition = {
     username?: string; //refers to user email
     theme?: SkillThemeType;
     backgroundImage?: string;
-    loggedInUsersOnly?: boolean;
+    // loggedInUsersOnly?: boolean;
     loggedInUsersCanEdit?: boolean;
     canCopy?: boolean;
     requireShareApproval?: boolean;
@@ -120,20 +120,13 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
                 },
                 expanded: false
             }),
-            loggedInUsersOnly: {
-                name: "Logged in only",
-                description: "Only logged in users can view the SkillTree",
-                dataType: "boolean",
-                defaultValue: true,
-                columnWidth: 200
-            },
-            loggedInUsersCanEdit: {
-                name: "Logged in can edit",
-                description: "Logged in users can update the status of skills",
-                dataType: "boolean",
-                defaultValue: true,
-                columnWidth: 200
-            },
+            // loggedInUsersOnly: {
+            //     name: "Logged in only",
+            //     description: "Only logged in users can view the SkillTree",
+            //     dataType: "boolean",
+            //     defaultValue: true,
+            //     columnWidth: 200
+            // },
             canCopy: {
                 name: "Can copy",
                 description: "Users can copy the SkillTree if it is shared",
@@ -141,8 +134,15 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
                 defaultValue: false,
                 columnWidth: 200
             },
+            loggedInUsersCanEdit: {
+                name: "Can update the completion status",
+                description: "Users can update the completion status of skills",
+                dataType: "boolean",
+                defaultValue: true,
+                columnWidth: 200
+            },
             requireShareApproval: {
-                name: "Share approvals",
+                name: "Authorize share requests",
                 description: "Your approval is needed before users can add to shared SkillTrees",
                 dataType: "boolean",
                 defaultValue: false,

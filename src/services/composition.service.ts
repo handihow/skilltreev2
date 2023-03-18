@@ -30,7 +30,6 @@ export const addComposition = async (userId: string, email: string): Promise<str
             username: email,
             canCopy: false,
             loggedInUsersCanEdit: true,
-            loggedInUsersOnly: true,
             lastUpdate: Timestamp.now(),
         };
         const skillTreeColRef = collection(db, 'compositions');
@@ -50,6 +49,23 @@ export const addComposition = async (userId: string, email: string): Promise<str
         return;
     } catch (err: any) {
         return "Could not add skilltree: " + err.message;
+    }
+}
+
+export const updateCompositionShareSettings = (compositionId: string, value: "copy" | "authorize" | "update", setTo: boolean) => {
+    const compositionDoc = doc(db, "compositions", compositionId);
+    switch (value) {
+        case "copy":
+            updateDoc(compositionDoc, { canCopy: setTo });
+            break;
+        case "authorize":
+            updateDoc(compositionDoc, { requireShareApproval: setTo });
+            break;
+        case "update":
+            updateDoc(compositionDoc, { loggedInUsersCanEdit: setTo });
+            break;
+        default:
+            break;
     }
 }
 
@@ -113,7 +129,7 @@ export const copyComposition = async (composition: IComposition, userId: string,
 
     for (const skilltree of skilltrees) {
         if (!skilltree.id) continue;
-        
+
         const newSkilltree = {
             ...skilltree,
             id: '',
@@ -178,7 +194,7 @@ const copyChildSkills = async (
         );
     }
     return;
-    
+
 };
 
 
