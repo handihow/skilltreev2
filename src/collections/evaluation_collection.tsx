@@ -1,29 +1,24 @@
-import { buildCollection, buildEntityCallbacks, buildProperties, buildProperty, EntityCollection, EntityOnFetchProps, EntityOnSaveProps, EntityReference, EnumValueConfig } from "firecms";
+import {
+    buildCollection,
+    buildEntityCallbacks,
+    buildProperties,
+    buildProperty,
+    EntityCollection,
+    EntityOnDeleteProps,
+    EntityOnFetchProps,
+    EntityOnSaveProps,
+    EntityReference,
+    EnumValueConfig
+} from "firecms";
 import { getSkillPath } from "../services/composition.service";
 import { addEvaluationToHistory } from "../services/evaluation.service";
-import { IEvaluationModel } from "./evaluation_model_collection";
-
-export type IEvaluation = {
-    id?: string;
-    type: string;
-    grade?: number;
-    percentage?: number;
-    letter?: string;
-    repeat?: boolean;
-    comment?: string;
-    student?: any;
-    teacher?: any;
-    composition?: any;
-    skilltree?: any;
-    skill?: any;
-    evaluationModel?: any;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
+import { deleteFromPathRecursively } from "../services/firestore";
+import { IEvaluationModel } from "../types/ievaluation.model.type";
+import { IEvaluation } from "../types/ievaluation.type";
 
 export function buildEvaluationsCollection(
     path: "evaluations" | "history",
-    evaluationModel?: IEvaluationModel, 
+    evaluationModel?: IEvaluationModel,
     teacherId?: string,
     studentId?: string,
     compositionId?: string,
@@ -39,7 +34,7 @@ export function buildEvaluationsCollection(
             status
         }) => {
             // return the updated values
-            if(status ==="new") {
+            if (status === "new") {
                 values.student = studentId || "";
                 values.teacher = teacherId || "";
                 values.composition = compositionId || "";
@@ -55,21 +50,32 @@ export function buildEvaluationsCollection(
         },
 
         onSaveSuccess: (props: EntityOnSaveProps<IEvaluation>) => {
-            const savedEvaluation = {id: props.entityId, ...props.values} as IEvaluation;
+            const savedEvaluation = { id: props.entityId, ...props.values } as IEvaluation;
             addEvaluationToHistory(savedEvaluation);
         },
-        
+
+        onPreDelete: async ({
+            path,
+            entityId,
+        }: EntityOnDeleteProps<IEvaluation>
+        ) => {
+            console.log(path);
+            const collectionPath = path + "/" + entityId + "/history"
+            const error = await deleteFromPathRecursively(collectionPath, "History")
+            if (error) throw new Error(error);
+        },
+
         async onFetch({
             entity,
         }: EntityOnFetchProps) {
-            if(entity.values.student) entity.values.student = new EntityReference(entity.values.student, "users");
-            if(entity.values.teacher) entity.values.teacher = new EntityReference(entity.values.teacher, "users");
-            if(entity.values.evaluationModel) entity.values.evaluationModel = new EntityReference(entity.values.evaluationModel, "evaluation_models");
-            if(entity.values.skill) {
+            if (entity.values.student) entity.values.student = new EntityReference(entity.values.student, "users");
+            if (entity.values.teacher) entity.values.teacher = new EntityReference(entity.values.teacher, "users");
+            if (entity.values.evaluationModel) entity.values.evaluationModel = new EntityReference(entity.values.evaluationModel, "evaluation_models");
+            if (entity.values.skill) {
                 const [path, error] = await getSkillPath(entity.values.skill);
                 console.log(path);
-                if(error) throw new Error(error);
-                if(!path) throw new Error("Skill path not found")
+                if (error) throw new Error(error);
+                if (!path) throw new Error("Skill path not found")
                 const split = path.split("/");
                 split.pop()
                 entity.values.skill = new EntityReference(entity.values.skill, split.join("/"))
@@ -77,7 +83,7 @@ export function buildEvaluationsCollection(
             return entity;
         },
     });
-    
+
     let properties = buildProperties<any>({
         type: {
             name: "Type",
@@ -117,7 +123,7 @@ export function buildEvaluationsCollection(
     });
 
     const enumValues = evaluationModel?.options?.map(v => {
-        return {id: v.letter, label: v.description, color: v.color} as EnumValueConfig;
+        return { id: v.letter, label: v.description, color: v.color } as EnumValueConfig;
     })
 
     const letterProp = buildProperty({
@@ -129,7 +135,7 @@ export function buildEvaluationsCollection(
         enumValues
     });
 
-    if(evaluationModel) {
+    if (evaluationModel) {
         switch (evaluationModel.type) {
             case "numerical":
                 properties.grade = gradeProp;
@@ -138,7 +144,7 @@ export function buildEvaluationsCollection(
                 properties.percentage = percProp;
                 break;
             case "letter":
-                
+
                 properties.letter = letterProp;
                 break;
             default:
@@ -177,7 +183,7 @@ export function buildEvaluationsCollection(
             readOnly: true
         }
     }
-    
+
 
     properties.repeat = {
         name: "Repeat",

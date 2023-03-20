@@ -14,7 +14,7 @@ import { IUser } from "../collections/user_collection";
 import { User } from "firebase/auth";
 import { db } from "./firestore";
 import { SavedDataType } from "beautiful-skill-tree";
-import { AutocompleteOption } from "../common/AutoCompleteOption.model";
+import { AutocompleteOption } from "../types/autoCompleteOption.type";
 import { EntityStatus } from "firecms";
 import { IComposition } from "../collections/composition_collection";
 

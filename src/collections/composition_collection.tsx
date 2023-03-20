@@ -7,35 +7,12 @@ import {
     EntityOnFetchProps,
     EntityReference,
 } from "firecms";
-import { SkillThemeType } from "beautiful-skill-tree";
 import { skilltreesCollection } from "./skilltree_collection";
 import { colors, gradients } from "../common/StandardData";
 import { getLoadedFonts } from "../services/fonts";
 import { ViewSkillTreeAction } from "../actions/viewST.actions";
 import { updateSharedUserStatus } from "../services/user.service";
-
-export type IComposition = {
-    id?: string;
-    title: string;
-    // owner?: EntityReference;
-    user?: string; //refers to user uid
-    username?: string; //refers to user email
-    theme?: SkillThemeType;
-    backgroundImage?: string;
-    // loggedInUsersOnly?: boolean;
-    loggedInUsersCanEdit?: boolean;
-    canCopy?: boolean;
-    requireShareApproval?: boolean;
-    sharedUsers?: string[];
-    pendingApprovalUsers?: string[];
-    // sharedWith?: EntityReference[];
-    lastUpdate?: any;
-    url?: string;
-    evaluationModel?: any;
-    gradeAllSkillsByDefault?: boolean;
-    pendingApproval?: boolean;
-    createdAt?: Date;
-}
+import { IComposition } from "../types/icomposition.type";
 
 const compositionCallbacks = buildEntityCallbacks({
     onPreSave: ({

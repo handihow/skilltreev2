@@ -26,15 +26,17 @@ import {
     useAuthController, useSideEntityController, useSnackbarController, useStorageSource,
 } from "firecms";
 import { db, deleteFromPathRecursively } from '../services/firestore';
-import { buildCompositionsCollection, IComposition } from "../collections/composition_collection";
+import { buildCompositionsCollection } from "../collections/composition_collection";
 import { skilltreesCollection } from "../collections/skilltree_collection";
-import { ISkilltree } from "../collections/skilltree_collection"
 import { useNavigate, useParams } from "react-router";
 import { collection, doc, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Unsubscribe } from "firebase/auth";
-import AlertDialog from "./widgets/AlertDialog";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { SkillTreeWidget } from "./widgets/SkillTreeWidget";
+import { ViewerContext } from "../context/ViewerContext";
+import { IComposition } from "../types/icomposition.type";
+import { ISkilltree } from "../types/iskilltree.type";
+import AlertDialog from "../widgets/AlertDialog";
+import { SkillTreeWidget } from "../widgets/SkillTreeWidget";
 
 export function SkillTreeEditor() {
     // hook to display custom snackbars
@@ -161,95 +163,98 @@ export function SkillTreeEditor() {
                     flexDirection: "column"
                 }}>
                 {isLoading ? <CircularProgress /> :
-                    <SkillProvider>
-                        <SkillTreeGroup theme={composition?.theme}>
-                            {() => (
-                                <React.Fragment>
-                                    <Card sx={{ width: '350px', marginTop: 2, alignSelf: 'flex-start' }}>
-                                        <CardContent>
-                                            <Typography gutterBottom variant="h6" component="div">{composition?.title}</Typography>
-                                            <List component="nav" dense disablePadding>
-                                                <ListItem key="composition-edit">
-                                                    <ListItemButton onClick={() => openSideController(true)}>
-                                                        <ListItemIcon>
-                                                            <EditIcon />
-                                                        </ListItemIcon>
-                                                        <ListItemText primary="Edit SkillTree" />
-                                                    </ListItemButton>
-                                                </ListItem>
-                                                <ListItem key="composition-controller">
-                                                    <ListItemButton onClick={() => openSideController(false)}>
-                                                        <ListItemIcon>
-                                                            <SettingsIcon />
-                                                        </ListItemIcon>
-                                                        <ListItemText primary="Open Controller" />
-                                                    </ListItemButton>
-                                                </ListItem>
-                                                <ListItem>
-                                                    <ListItemButton onClick={handleClick}>
-                                                        <ListItemIcon>
-                                                            <AccountTreeIcon />
-                                                        </ListItemIcon>
-                                                        <ListItemText primary="Tree controls" />
-                                                        {open ? <ExpandLess /> : <ExpandMore />}
-                                                    </ListItemButton>
-                                                </ListItem>
-                                                <Collapse in={open} timeout="auto" unmountOnExit>
-                                                    <List component="div" dense disablePadding>
-                                                        <ListItem key="skilltree-add">
-                                                            <ListItemButton onClick={() => openSkilltreeController()}>
-                                                                <ListItemIcon>
-                                                                    <AddIcon />
-                                                                </ListItemIcon>
-                                                                <ListItemText primary="Add tree" />
-                                                            </ListItemButton>
-                                                        </ListItem>
-                                                        {skilltreesList.map((skilltree) => (
-                                                            <ListItem key={skilltree.id} secondaryAction={
-                                                                <AlertDialog
-                                                                    agreeFunction={deleteSkilltree}
-                                                                    functionParams={{ id: skilltree.id }}
-                                                                    openBtnText="icon"
-                                                                    agreeBtnText="Yes, delete!"
-                                                                    alertWarning="This will delete the tree and all it's child skills! Do you really want to do this?"
-                                                                    btnColor='error'
-                                                                ></AlertDialog>
-                                                            }>
-                                                                <ListItemButton onClick={() => openSkilltreeController(skilltree.id)}>
+                    <ViewerContext.Provider value={{
+                        mode: "editor",
+                        composition,
+                        evaluationModel: null,
+                        selectedUser: null
+                    }}>
+                        <SkillProvider>
+                            <SkillTreeGroup theme={composition?.theme}>
+                                {() => (
+                                    <React.Fragment>
+                                        <Card sx={{ width: '350px', marginTop: 2, alignSelf: 'flex-start' }}>
+                                            <CardContent>
+                                                <Typography gutterBottom variant="h6" component="div">{composition?.title}</Typography>
+                                                <List component="nav" dense disablePadding>
+                                                    <ListItem key="composition-edit">
+                                                        <ListItemButton onClick={() => openSideController(true)}>
+                                                            <ListItemIcon>
+                                                                <EditIcon />
+                                                            </ListItemIcon>
+                                                            <ListItemText primary="Edit SkillTree" />
+                                                        </ListItemButton>
+                                                    </ListItem>
+                                                    <ListItem key="composition-controller">
+                                                        <ListItemButton onClick={() => openSideController(false)}>
+                                                            <ListItemIcon>
+                                                                <SettingsIcon />
+                                                            </ListItemIcon>
+                                                            <ListItemText primary="Open Controller" />
+                                                        </ListItemButton>
+                                                    </ListItem>
+                                                    <ListItem>
+                                                        <ListItemButton onClick={handleClick}>
+                                                            <ListItemIcon>
+                                                                <AccountTreeIcon />
+                                                            </ListItemIcon>
+                                                            <ListItemText primary="Tree controls" />
+                                                            {open ? <ExpandLess /> : <ExpandMore />}
+                                                        </ListItemButton>
+                                                    </ListItem>
+                                                    <Collapse in={open} timeout="auto" unmountOnExit>
+                                                        <List component="div" dense disablePadding>
+                                                            <ListItem key="skilltree-add">
+                                                                <ListItemButton onClick={() => openSkilltreeController()}>
                                                                     <ListItemIcon>
-                                                                        <EditIcon />
+                                                                        <AddIcon />
                                                                     </ListItemIcon>
-                                                                    <ListItemText primary={skilltree.title} />
+                                                                    <ListItemText primary="Add tree" />
                                                                 </ListItemButton>
                                                             </ListItem>
-                                                        ))}
-                                                    </List>
-                                                </Collapse>
-                                                <ListItem key="go-back">
-                                                    <ListItemButton onClick={() => backToOverview()}>
-                                                        <ListItemIcon>
-                                                            <ArrowBackIcon />
-                                                        </ListItemIcon>
-                                                        <ListItemText primary="Go back" />
-                                                    </ListItemButton>
-                                                </ListItem>
-                                            </List>
-                                        </CardContent>
-                                    </Card>
-                                    {skilltreesList.map((skilltree) => (
-                                        <SkillTreeWidget
-                                            key={skilltree.id}
-                                            mode="editor"
-                                            skilltree={skilltree}
-                                            handleSave={undefined}
-                                            selectedUser={null}
-                                            handleNodeSelect={undefined}
-                                            isAdmin={true}
-                                        ></SkillTreeWidget>))}
-                                </React.Fragment>
-                            )}
-                        </SkillTreeGroup>
-                    </SkillProvider>
+                                                            {skilltreesList.map((skilltree) => (
+                                                                <ListItem key={skilltree.id} secondaryAction={
+                                                                    <AlertDialog
+                                                                        agreeFunction={deleteSkilltree}
+                                                                        functionParams={{ id: skilltree.id }}
+                                                                        openBtnText="icon"
+                                                                        agreeBtnText="Yes, delete!"
+                                                                        alertWarning="This will delete the tree and all it's child skills! Do you really want to do this?"
+                                                                        btnColor='error'
+                                                                    ></AlertDialog>
+                                                                }>
+                                                                    <ListItemButton onClick={() => openSkilltreeController(skilltree.id)}>
+                                                                        <ListItemIcon>
+                                                                            <EditIcon />
+                                                                        </ListItemIcon>
+                                                                        <ListItemText primary={skilltree.title} />
+                                                                    </ListItemButton>
+                                                                </ListItem>
+                                                            ))}
+                                                        </List>
+                                                    </Collapse>
+                                                    <ListItem key="go-back">
+                                                        <ListItemButton onClick={() => backToOverview()}>
+                                                            <ListItemIcon>
+                                                                <ArrowBackIcon />
+                                                            </ListItemIcon>
+                                                            <ListItemText primary="Go back" />
+                                                        </ListItemButton>
+                                                    </ListItem>
+                                                </List>
+                                            </CardContent>
+                                        </Card>
+                                        {skilltreesList.map((skilltree) => (
+                                            <SkillTreeWidget
+                                                key={skilltree.id}
+                                                skilltree={skilltree}
+                                                handleSave={undefined}
+                                            ></SkillTreeWidget>))}
+                                    </React.Fragment>
+                                )}
+                            </SkillTreeGroup>
+                        </SkillProvider>
+                    </ViewerContext.Provider>
                 }
             </Container>
         </Box>

@@ -1,6 +1,6 @@
 import { ISkill } from '../collections/skill_collection';
 import { ISkilltree } from '../collections/skilltree_collection';
-import { buildEnumValueConfig, ChipColorKey, ChipColorScheme, EnumValueConfig, EnumValues } from 'firecms';
+import { buildEnumValueConfig, EnumValueConfig, EnumValues } from 'firecms';
 
 export const standardTheme = {
   backgroundColor: 'transparent',

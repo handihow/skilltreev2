@@ -1,5 +1,5 @@
 import { SavedDataType } from "beautiful-skill-tree";
-import { ISkill } from "../collections/skill_collection";
+import { ISkill } from "../types/iskill.type";
 import SkillContent from "./SkillContent";
 
 export const countSelectedSkills = (data: SavedDataType[]) => {
@@ -21,10 +21,7 @@ export const skillTreeToSkillArray = (skills: ISkill[]) => {
 }
 
 const constructSkill = (
-    skill: ISkill, skills: ISkill[],
-    view: "editor" | "teacher" | "student" = "student",
-    openSkillController: Function,
-    deleteSkillFunc: Function,
+    skill: ISkill, skills: ISkill[]
 ) => {
         return {
             tooltip: {
@@ -33,13 +30,10 @@ const constructSkill = (
                     description={skill.description}
                     links={skill.links ? skill.links : []}
                     optional={skill.optional ? true : false}
-                    view={view}
-                    openSkillControllerFunc={openSkillController}
-                    deleteSkillFunc={deleteSkillFunc}
                 />,
                 direction: skill.direction ? skill.direction : 'top'
             },
-            children: filterChildren(skill, skills, view, openSkillController, deleteSkillFunc),
+            children: filterChildren(skill, skills),
             links: skill.links ? skill.links : [],
             ...skill
         };
@@ -48,31 +42,25 @@ const constructSkill = (
 
 const filterChildren = (
     skill: ISkill,
-    skills: ISkill[],
-    view: "editor" | "teacher" | "student" = "student",
-    openSkillController: Function,
-    deleteSkillFunc: Function,
+    skills: ISkill[]
 ) => {
     const children: any[] = [];
     let rawChildren = skills.filter(s => skill.parent && s.parent?.length === skill.parent.length + 2 && s.parent.includes(skill?.id || ""));
     rawChildren.forEach(rawChild => {
-        let childSkill = constructSkill(rawChild, skills, view, openSkillController, deleteSkillFunc);
+        let childSkill = constructSkill(rawChild, skills);
         children.push(childSkill);
     });
     return children
 }
 
 export const skillArrayToSkillTree = (
-    skills: ISkill[],
-    view: "editor" | "teacher" | "student" = "student",
-    openSkillController: Function,
-    deleteSkillFunc: Function
+    skills: ISkill[]
 ) => {
     //first, extract all the root skills
     let skilltree: any[] = [];
     skills.forEach((skill) => {
         if (skill.parent?.length === 6) {
-            let rootSkill = constructSkill(skill, skills, view, openSkillController, deleteSkillFunc);
+            let rootSkill = constructSkill(skill, skills);
             //this is a root skill
             skilltree.push(rootSkill);
         }
@@ -83,10 +71,7 @@ export const skillArrayToSkillTree = (
 const addToSkillArray = (
     arr: ISkill[],
     child: ISkill,
-    parent: any,
-    view: "editor" | "teacher" | "student" = "student",
-    openSkillController = (id: string, mode = "edit") => { },
-    deleteSkillFunc = (id: string) => { },
+    parent: any
 ) => {
     let flatSkill: ISkill = {
         id: child.id,
@@ -98,9 +83,7 @@ const addToSkillArray = (
                 description={child.tooltip.description}
                 links={child.tooltip.links}
                 optional={child.optional ? true : false}
-                view={view}
-                openSkillControllerFunc={openSkillController}
-                deleteSkillFunc={deleteSkillFunc} />,
+                />,
             description: child.tooltip.description,
             links: child.tooltip.links,
         },
@@ -122,10 +105,7 @@ const addToSkillArray = (
                 [
                     ...flatSkill.parent || [],
                     { parentId: flatSkill.id, childIndex: index }
-                ],
-                view,
-                openSkillController,
-                deleteSkillFunc
+                ]
             );
         })
     }

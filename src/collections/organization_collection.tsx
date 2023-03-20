@@ -1,15 +1,5 @@
 import { buildCollection, buildProperty } from "firecms";
-
-type IOrganization = {
-    name: string;
-    address: string;
-    postalCode: string;
-    city: string;
-    country: string;
-    contacts?: any[];
-    createdAt: Date;
-    updatedAt: Date;
-}
+import { IOrganization } from "../types/iorganization.type";
 
 export const organizationCollection = buildCollection<IOrganization>({
     name: "Organizations",

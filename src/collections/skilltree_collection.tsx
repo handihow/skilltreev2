@@ -5,29 +5,7 @@ import { getCountFromPath } from "../services/firestore";
 import { skillsCollectionWithSubcollections } from "./skill_collection";
 import { MoveDownAction, MoveUpAction } from "../actions/move.actions";
 import { deleteSkillsOfSkilltree, createSkilltreeSkills } from "../services/composition.service";
-
-export type ISkilltree = {
-    id?: string
-    title: string;
-    description?: string;
-    collapsible?: boolean;
-    closedByDefault?: boolean;
-    disabled?: boolean;
-    order?: number;
-    composition?: string; //references the parent composition ID
-    //make it compatible with skilltree
-    data?: any;
-    //make it compatible with treebeard
-    name?: string;
-    isSkill?: boolean;
-    toggled?: boolean;
-    children?: any;
-    decorators?: any;
-    countChildren?: number;
-    path?: string;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
+import { ISkilltree } from "../types/iskilltree.type";
 
 const skilltreeCallbacks = buildEntityCallbacks({
     onPreSave: async ({

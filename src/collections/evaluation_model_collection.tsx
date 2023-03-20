@@ -1,17 +1,7 @@
 import { buildCollection, buildProperty } from "firecms";
 import { chipColors } from "../common/StandardData";
+import { IEvaluationModel } from "../types/ievaluation.model.type";
 
-export type IEvaluationModel = {
-    id?: string;
-    name: string;
-    type: "numerical" | "percentage" | "letter";
-    minimum?: number;
-    maximum?: number;
-    options?: any[];
-    repeatOption?: any;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
 
 export const evaluationModelCollection = buildCollection<IEvaluationModel>({
     name: "Evaluation models",

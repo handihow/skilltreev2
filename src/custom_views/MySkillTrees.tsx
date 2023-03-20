@@ -22,8 +22,6 @@ import {
 import { db, storage } from "../services/firestore";
 import { addComposition, deleteComposition, copyComposition } from "../services/composition.service";
 
-import { IComposition } from "../collections/composition_collection";
-import AlertDialog from "./widgets/AlertDialog";
 import { useNavigate } from "react-router-dom";
 import { buildShareRequestCollection } from "../collections/share_request_collection";
 import { collection, query, where, orderBy, onSnapshot, Unsubscribe } from "firebase/firestore";
@@ -33,6 +31,8 @@ import PreviewIcon from '@mui/icons-material/Preview';
 import EditIcon from '@mui/icons-material/Edit';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ShareIcon from '@mui/icons-material/Share';
+import { IComposition } from "../types/icomposition.type";
+import AlertDialog from "../widgets/AlertDialog";
 /**
  * Sample CMS view not bound to a collection, customizable by the developer
  * @constructor

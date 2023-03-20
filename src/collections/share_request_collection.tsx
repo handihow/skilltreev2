@@ -1,16 +1,7 @@
 import { buildCollection, buildEntityCallbacks, buildProperty, EntityCollection, EntityOnFetchProps, EntityReference, User } from "firecms";
 import { getComposition } from "../services/composition.service";
 import { addOrRemoveSharedUser, addOrRemovePendingApprovalUser } from "../services/user.service";
-
-type IShareRequest = {
-    composition: any;
-    requester?: any;
-    approver?: any;
-    requestApproved?: boolean;
-    approvalComment?: string;
-    createdAt: Date;
-    updatedAt: Date;
-}
+import { IShareRequest } from "../types/ishareRequest.type";
 
 export function buildShareRequestCollection(mode: "requesting" | "approving" | "admin", user: User, id?: string): EntityCollection<IShareRequest> {
     const shareRequestCallbacks = buildEntityCallbacks({

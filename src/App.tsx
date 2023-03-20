@@ -61,6 +61,13 @@ const customViews: CMSView[] = [
         view: <SkillTreeViewer />
     },
     {
+        path: "compositions/:id/grades",
+        name: "SkillTree Viewer",
+        hideFromNavigation: true,
+        description: "SkillTree Viewer",
+        view: <SkillTreeViewer />
+    },
+    {
         path: "compositions/:id/editor",
         name: "SkillTree Editor",
         hideFromNavigation: true,

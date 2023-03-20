@@ -9,7 +9,6 @@ import {
 } from "firecms";
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
-import { IComposition } from "../collections/composition_collection";
 import { getComposition, updateCompositionShareSettings } from "../services/composition.service";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DoneIcon from '@mui/icons-material/Done';
@@ -18,6 +17,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import NaturePeopleIcon from '@mui/icons-material/NaturePeople';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { IComposition } from "../types/icomposition.type";
 
 export function ShareSkillTreeView() {
     const snackbarController = useSnackbarController();
