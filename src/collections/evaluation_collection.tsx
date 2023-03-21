@@ -5,7 +5,6 @@ import {
     buildProperty,
     EntityCollection,
     EntityOnDeleteProps,
-    EntityOnFetchProps,
     EntityOnSaveProps,
     EntityReference,
     EnumValueConfig
@@ -29,29 +28,38 @@ export function buildEvaluationsCollection(
         buildEvaluationsCollection("history"),
     ];
     const evaluationCallbacks = buildEntityCallbacks({
-        onPreSave: ({
+        onPreSave: async ({
             values,
             status
         }) => {
             // return the updated values
             if (status === "new") {
-                values.student = studentId || "";
-                values.teacher = teacherId || "";
-                values.composition = compositionId || "";
-                values.skilltree = skilltreeId || "";
-                values.skill = skillId || "";
-                values.evaluationModel = evaluationModel?.id || "";
-            } else {
-                values.student = values.student.id;
-                values.teacher = values.teacher.id;
-                values.evaluationModel = values.evaluationModel.id;
+                if(!skillId || !evaluationModel?.id || !studentId || !teacherId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
+                const [path, error] = await getSkillPath(skillId);
+                if(error || !path) throw new Error("Missing path info: " + error);
+                values.student = new EntityReference(studentId, "users");
+                values.teacher = new EntityReference(teacherId, "users");
+                values.composition = new EntityReference(compositionId, "compositions");
+                values.skilltree = new EntityReference(skilltreeId, "compositions/" + compositionId + "/skilltrees");
+                const split = path.split("/");
+                split.pop()
+                values.skill = new EntityReference(skillId, split.join("/"));
+                values.evaluationModel = new EntityReference(evaluationModel.id, "evaluation_models");
             }
             return values;
         },
 
         onSaveSuccess: (props: EntityOnSaveProps<IEvaluation>) => {
-            const savedEvaluation = { id: props.entityId, ...props.values } as IEvaluation;
-            addEvaluationToHistory(savedEvaluation);
+            const savedEvaluation = { 
+                id: props.entityId, 
+                createdAt: new Date(),
+                type: props.values.type,
+                percentage: props.values.percentage || null,
+                grade: props.values.grade || null,
+                letter: props.values.letter || null
+            } as IEvaluation;
+            const error = addEvaluationToHistory(savedEvaluation);
+            if(error) throw new Error(error);
         },
 
         onPreDelete: async ({
@@ -59,28 +67,9 @@ export function buildEvaluationsCollection(
             entityId,
         }: EntityOnDeleteProps<IEvaluation>
         ) => {
-            console.log(path);
             const collectionPath = path + "/" + entityId + "/history"
             const error = await deleteFromPathRecursively(collectionPath, "History")
             if (error) throw new Error(error);
-        },
-
-        async onFetch({
-            entity,
-        }: EntityOnFetchProps) {
-            if (entity.values.student) entity.values.student = new EntityReference(entity.values.student, "users");
-            if (entity.values.teacher) entity.values.teacher = new EntityReference(entity.values.teacher, "users");
-            if (entity.values.evaluationModel) entity.values.evaluationModel = new EntityReference(entity.values.evaluationModel, "evaluation_models");
-            if (entity.values.skill) {
-                const [path, error] = await getSkillPath(entity.values.skill);
-                console.log(path);
-                if (error) throw new Error(error);
-                if (!path) throw new Error("Skill path not found")
-                const split = path.split("/");
-                split.pop()
-                entity.values.skill = new EntityReference(entity.values.skill, split.join("/"))
-            }
-            return entity;
         },
     });
 
@@ -101,39 +90,51 @@ export function buildEvaluationsCollection(
         }
     });
 
-    const gradeProp = buildProperty({
+    const gradeProp = buildProperty(({values}) => ({
         name: "Grade",
+        disabled: values.repeat && {
+            clearOnDisabled: true,
+            disabledMessage: "You have set to repeat"
+        },
         validation: {
-            required: evaluationModel ? true : false,
+            required: evaluationModel && !values.repeat ? true : false,
             min: evaluationModel?.minimum,
             max: evaluationModel?.maximum
         },
         dataType: "number",
-    });
+    }));
 
-    const percProp = buildProperty({
+    const percProp = buildProperty(({values}) => ({
         name: "Percentage",
+        disabled: values.repeat && {
+            clearOnDisabled: true,
+            disabledMessage: "You have set to repeat"
+        },
         validation: {
-            required: evaluationModel ? true : false,
+            required: evaluationModel && !values.repeat ? true : false,
             min: 0,
             max: 100,
             integer: true
         },
         dataType: "number",
-    });
+    }));
 
     const enumValues = evaluationModel?.options?.map(v => {
         return { id: v.letter, label: v.description, color: v.color } as EnumValueConfig;
     })
 
-    const letterProp = buildProperty({
+    const letterProp = buildProperty(({values}) => ({
         name: "Result",
+        disabled: values.repeat && {
+            clearOnDisabled: true,
+            disabledMessage: "You have set to repeat"
+        },
         validation: {
-            required: evaluationModel ? true : false
+            required: evaluationModel && !values.repeat  ? true : false
         },
         dataType: "string",
         enumValues
-    });
+    }));
 
     if (evaluationModel) {
         switch (evaluationModel.type) {
@@ -150,6 +151,10 @@ export function buildEvaluationsCollection(
             default:
                 break;
         }
+    } else if(path === "history") {
+        properties.grade = gradeProp;
+        properties.percentage = percProp;
+        properties.letter = letterProp;
     } else {
         properties.skill = {
             name: "Skill",
@@ -201,7 +206,7 @@ export function buildEvaluationsCollection(
         name: "Created at",
         autoValue: "on_create",
         disabled: {
-            hidden: true
+            hidden: evaluationModel ? true : false
         }
     });
     properties.updatedAt = buildProperty({
@@ -209,7 +214,7 @@ export function buildEvaluationsCollection(
         name: "Updated at",
         autoValue: "on_update",
         disabled: {
-            hidden: true
+            hidden: evaluationModel ? true : false
         }
     });
 
@@ -224,7 +229,7 @@ export function buildEvaluationsCollection(
         subcollections,
         permissions: ({ authController }) => ({
             edit: !authController.extra?.roles?.includes('student') && path !== "history",
-            create: !authController.extra?.roles?.includes('student') && path !== "history",
+            create: false,
             // we have created the roles object in the navigation builder
             delete: authController.extra?.roles?.includes('super')
         }),

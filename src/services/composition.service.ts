@@ -1,10 +1,10 @@
 import { Timestamp, collection, addDoc, updateDoc, doc, getDoc, getDocs, orderBy, query, collectionGroup, deleteDoc, where } from "firebase/firestore";
-import { IComposition } from "../collections/composition_collection";
 import { db } from "./firestore";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "./firestore";
-import { ISkilltree } from "../collections/skilltree_collection";
 import { standardChildSkills, standardRootSkill } from "../common/StandardData";
+import { IComposition } from "../types/icomposition.type";
+import { ISkilltree } from "../types/iskilltree.type";
 
 export const getComposition = async (id: string): Promise<[IComposition | null, string | null]> => {
     const compositionRef = doc(db, 'compositions/' + id);

@@ -1,4 +1,13 @@
+import { SavedDataType } from 'beautiful-skill-tree';
 import { createContext } from 'react';
 import { ISkill } from '../types/iskill.type';
 
-export const SkillsContext = createContext<ISkill[]>([]);
+type SkillsSettings = {
+    skills: ISkill[],
+    savedData: SavedDataType
+}
+
+export const SkillsContext = createContext<SkillsSettings>({
+    skills: [],
+    savedData: {}
+});

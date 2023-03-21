@@ -167,7 +167,8 @@ export function SkillTreeEditor() {
                         mode: "editor",
                         composition,
                         evaluationModel: null,
-                        selectedUser: null
+                        selectedUser: null,
+                        evaluations: []
                     }}>
                         <SkillProvider>
                             <SkillTreeGroup theme={composition?.theme}>

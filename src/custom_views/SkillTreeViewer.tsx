@@ -30,6 +30,10 @@ import { IEvaluationModel } from "../types/ievaluation.model.type";
 import { ISkilltree } from "../types/iskilltree.type";
 import AlertDialog from "../widgets/AlertDialog";
 import { SkillTreeWidget } from "../widgets/SkillTreeWidget";
+import { collection, onSnapshot, query, Unsubscribe, where } from "firebase/firestore";
+import { createDocRef, db } from "../services/firestore";
+import { IEvaluation } from "../types/ievaluation.type";
+import { IEvent } from "../types/ievent.type";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars
@@ -44,6 +48,9 @@ export function SkillTreeViewer() {
     const [composition, setComposition] = useState<IComposition | null>(null);
     const [url, setUrl] = useState("");
     const [evaluationModel, setEvaluationModel] = useState<IEvaluationModel | null>(null);
+    const [evaluations, setEvaluations] = useState<IEvaluation[]>([]);
+    const [events, setEvents] = useState<IEvent[]>([]);
+    const [subscriptions, setSubscriptions] = useState<Unsubscribe[]>([]);
 
     const [isLoading, setIsLoading] = useState(true);
     const [users, setUsers] = useState<AutocompleteOption[]>([])
@@ -94,6 +101,49 @@ export function SkillTreeViewer() {
         initialize();
     }, [])
 
+    useEffect(() => {
+        const evaluationColRef = collection(db, 'evaluations');
+        const eventColRef = collection(db, 'events');
+        if(!selectedUser) return setEvaluations([]); 
+        const studentRef = createDocRef("users/" + selectedUser.id);
+        const compositionRef = createDocRef("compositions/" + id);
+        const evaluationQuery = query(evaluationColRef, where("student", "==", studentRef), where("composition", "==", compositionRef));
+        const unsubscribe = onSnapshot(evaluationQuery, {
+            next: (snap) => {
+                const evaluations = snap.docs.map((doc) => {
+                    return {id: doc.id, ...doc.data()} as IEvaluation;
+                });
+                setEvaluations(evaluations);
+            },
+            error: (error) => {
+                snackbarController.open({
+                    type: "error",
+                    message: error.message
+                })
+            }
+        });
+        const eventsQuery = query(eventColRef, where("student", "==", studentRef), where("composition", "==", compositionRef));
+        const unsubscribe2 = onSnapshot(eventsQuery, {
+            next: (snap) => {
+                const events = snap.docs.map((doc) => {
+                    return {id: doc.id, ...doc.data()} as IEvent;
+                });
+                console.log(events);
+                setEvents(events);
+            },
+            error: (error) => {
+                snackbarController.open({
+                    type: "error",
+                    message: error.message
+                })
+            }
+        });
+        setSubscriptions([...subscriptions, unsubscribe, unsubscribe2]);
+        return () => {
+            subscriptions.forEach(unsubscribe => unsubscribe());
+        }
+    }, [selectedUser])
+
     const { user, extra: { roles = [] } } = authController;
     const isAdmin = user?.uid === composition?.user || roles.includes("admin") || roles.includes("super");
 
@@ -127,7 +177,9 @@ export function SkillTreeViewer() {
                         mode: isAdmin ? "teacher" : "student",
                         composition,
                         evaluationModel,
-                        selectedUser
+                        selectedUser,
+                        evaluations,
+                        events
                     }}>
                         <SkillProvider>
                             <SkillTreeGroup theme={composition?.theme}>

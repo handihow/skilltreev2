@@ -48,3 +48,6 @@ export const getCountFromPath = async (path: string) => {
     return snapshot.data().count;
 }
 
+export const createDocRef = (path: string) => {
+    return doc(db, path);
+}

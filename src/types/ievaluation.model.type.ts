@@ -4,6 +4,7 @@ export type IEvaluationModel = {
     type: "numerical" | "percentage" | "letter";
     minimum?: number;
     maximum?: number;
+    passLevel?: number;
     options?: any[];
     repeatOption?: any;
     createdAt?: Date;

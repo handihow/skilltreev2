@@ -32,6 +32,7 @@ import { fas } from '@fortawesome/free-solid-svg-icons'
 import { fab } from '@fortawesome/free-brands-svg-icons'
 import { evaluationModelCollection } from "./collections/evaluation_model_collection";
 import { buildEvaluationsCollection } from "./collections/evaluation_collection";
+import { buildEventsCollection } from "./collections/event_collection";
 import { ShareSkillTreeView } from "./custom_views/ShareSkillTree";
 library.add(fas)
 library.add(fab)
@@ -132,6 +133,7 @@ export default function App() {
                 buildShareRequestCollection("admin", user),
                 evaluationModelCollection, 
                 buildEvaluationsCollection("evaluations"),
+                buildEventsCollection("table"),
                 organizationCollection,
             ])
         } else if(roles && roles.includes("admin") && organization){

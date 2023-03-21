@@ -10,13 +10,13 @@ import {
     setDoc,
     where,
 } from "firebase/firestore";
-import { IUser } from "../collections/user_collection";
 import { User } from "firebase/auth";
 import { db } from "./firestore";
 import { SavedDataType } from "beautiful-skill-tree";
 import { AutocompleteOption } from "../types/autoCompleteOption.type";
 import { EntityStatus } from "firecms";
-import { IComposition } from "../collections/composition_collection";
+import { IUser } from "../types/iuser.type";
+import { IComposition } from "../types/icomposition.type";
 
 export const getUserRoles = async (userId: string): Promise<[string[] | null, string | null]> => {
     const userRolesRef = collection(db, 'users/' + userId + '/roles')

@@ -1,6 +1,7 @@
 import { DocumentReference, getDoc, collection, query, where, getDocs, addDoc } from "firebase/firestore";
-import { IEvaluation } from "../collections/evaluation_collection";
-import { IEvaluationModel } from "../collections/evaluation_model_collection";
+import { IEvaluationModel } from "../types/ievaluation.model.type";
+import { IEvaluation } from "../types/ievaluation.type";
+
 import { db } from "./firestore";
 
 
@@ -18,13 +19,14 @@ export const getEvaluationModel = async (docRef: DocumentReference): Promise<[IE
     }
 }
 
-export const getEvaluatedSkill = async (userId: string, skillId: string) => {
+export const getEvaluatedSkill = async (userId: string, skillId: string) : Promise<[IEvaluation | null, string | null]> => {
     const evaluationColRef = collection(db, 'evaluations');
     const evaluationQuery = query(evaluationColRef, where("skill", "==", skillId), where("student", "==", userId));
     try {
         const snap = await getDocs(evaluationQuery);
         if (snap.empty) return [null, null];
-        return [snap.docs[0].id, null];
+        const evaluation: IEvaluation = { id: snap.docs[0].id, ...snap.docs[0].data()} as IEvaluation
+        return [evaluation, null];
     } catch (e: any) {
         return [null, e.message as string];
     }

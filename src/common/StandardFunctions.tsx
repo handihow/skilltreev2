@@ -125,3 +125,18 @@ export const arraysEqual = (a: any[], b: any[]) => {
 export const propertyInArrayEqual = (arr: any[], property: string | number) => {
     return arr.every(item => item[property] === arr[0][property]);
 }
+
+export const convertToDateTimeString = (dateObj: Date) => {
+
+    const localeDateStr = dateObj.toLocaleDateString();
+
+    const hour = dateObj.getHours();
+    const hourStr = ('0' + hour).slice(-2);
+    // To make sure the hour always has 2-character-format
+
+    const minute = dateObj.getMinutes();
+    const minuteStr = ('0' + minute).slice(-2);
+
+    return `${localeDateStr} at ${hourStr}:${minuteStr}`;
+
+}

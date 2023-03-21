@@ -2,14 +2,13 @@ import { buildCollection, buildProperty } from "firecms";
 import { chipColors } from "../common/StandardData";
 import { IEvaluationModel } from "../types/ievaluation.model.type";
 
-
 export const evaluationModelCollection = buildCollection<IEvaluationModel>({
     name: "Evaluation models",
     description: "Manage evaluation models",
     singularName: "Evaluation model",
     path: "evaluation_models",
     group: "Grades",
-    icon: "Grading",
+    icon: "Grade",
     permissions: ({ authController }) => ({
         edit: authController.extra?.roles?.includes('super'),
         create: authController.extra?.roles?.includes('super'),
@@ -56,6 +55,18 @@ export const evaluationModelCollection = buildCollection<IEvaluationModel>({
                 required: values.type === 'numerical'
             },
             defaultValue: 10
+        }),
+        passLevel: ({values}) => ({
+            name: "Pass level",
+            dataType: "number",
+            disabled: values.type === 'letter' && {
+                clearOnDisabled: true,
+                disabledMessage: "You can only set the pass level for numerical grades or percentages"
+            },
+            validation: {
+                required: values.type !== 'letter',
+                requiredMessage: "You must enter the minimum level to accept as completed / sufficient result"
+            }
         }),
         options: ({values}) => ({
             name: "Options",

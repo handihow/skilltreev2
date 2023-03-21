@@ -1,8 +1,8 @@
 import { CircularProgress } from "@mui/material";
 import { SavedDataType, SkillTree } from "beautiful-skill-tree";
-import { collectionGroup, query, where, orderBy, onSnapshot, doc, getDoc, QuerySnapshot } from "firebase/firestore";
+import { collectionGroup, query, where, orderBy, onSnapshot, doc, getDoc, QuerySnapshot, Unsubscribe } from "firebase/firestore";
 import { getDownloadURL, ref } from "firebase/storage";
-import { useSideEntityController, useSnackbarController } from "firecms";
+import { useSnackbarController } from "firecms";
 import { useContext, useEffect, useState } from "react";
 import { SkillsContext } from "../context/SkillsContext";
 import { skillArrayToSkillTree } from "../common/StandardFunctions";
@@ -90,9 +90,9 @@ function SkillTreeWithData({
 }) {
 
     const snackbarController = useSnackbarController();
-    const sideEntityController = useSideEntityController();
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState<any[]>([]);
+    const [subscriptions, setSubscriptions] = useState<Unsubscribe[]>([]);
     const [savedData, setSavedData] = useState<SavedDataType>({});
     const content = useContext(ViewerContext);
 
@@ -112,19 +112,22 @@ function SkillTreeWithData({
             })
             return;
         };
-        try {
-            const resultRef = doc(db, 'results', content.selectedUser?.id || "", 'skilltrees', skilltree.id || "");
-            const result = await getDoc(resultRef);
-            const resultObj = result.exists() ? result.data()?.skills : {};
-            setSavedData(resultObj);
-            setIsLoading(false);
-        } catch (err: any) {
-            snackbarController.open({
-                type: "error",
-                message: err.message
-            });
-            setIsLoading(false);
-        }
+        const resultRef = doc(db, 'results', content.selectedUser?.id || "", 'skilltrees', skilltree.id || "");
+        const unsubscribe = onSnapshot(resultRef, {
+            next: (result) => {
+                const resultObj = result.exists() ? result.data()?.skills : {};
+                setSavedData(resultObj);
+                setIsLoading(false);
+            },
+            error: (err: any) => {
+                snackbarController.open({
+                    type: "error",
+                    message: err.message
+                });
+                setIsLoading(false);
+            }
+        });
+        setSubscriptions([...subscriptions, unsubscribe])
     }
 
     useEffect(() => {
@@ -132,12 +135,18 @@ function SkillTreeWithData({
         setData(transformedSkills);
         if (content.mode === "editor") return setIsLoading(false);
         getViewerData();
+        return () => {
+            subscriptions.forEach(unsubscribe => unsubscribe());
+        }
     }, [content.selectedUser, skills])
 
     if (isLoading) {
         return <CircularProgress sx={{ margin: "20px" }} />
     } else {
-        return <SkillsContext.Provider value={skills}>
+        return <SkillsContext.Provider value={{
+            skills,
+            savedData
+        }}>
             <SkillTree
                 treeId={skilltree.id || ""}
                 title={skilltree.title}
