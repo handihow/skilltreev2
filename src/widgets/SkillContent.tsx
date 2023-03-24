@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button, ButtonGroup, Chip } from '@mui/material';
-import AlertDialog from '../widgets/AlertDialog';
+import AlertDialog from './AlertDialog';
 import { ViewerContext } from '../context/ViewerContext';
 import { SkillsContext } from '../context/SkillsContext';
 import { useAuthController, useSideEntityController, useSnackbarController } from 'firecms';
@@ -10,9 +10,9 @@ import { skillsCollection } from '../collections/skill_collection';
 import { deleteFromPathRecursively } from '../services/firestore';
 import { IEvaluation } from '../types/ievaluation.type';
 import { InfoChip } from '../types/infoChip.type';
-import { CHIP_COLORS } from './StandardData';
+import { CHIP_COLORS } from '../common/StandardData';
 import { buildEventsCollection } from '../collections/event_collection';
-import { convertToDateTimeString } from './StandardFunctions';
+import { convertToDateTimeString } from '../common/StandardFunctions';
 
 export default function SkillContent(props: {
     id: string;
@@ -36,7 +36,7 @@ export default function SkillContent(props: {
     const content = useContext(ViewerContext);
     const skillsContent = useContext(SkillsContext);
     const skill = skillsContent.skills.find(s => s.id === props.id);
-    const nodeState = skillsContent.savedData[props.id].nodeState;
+    const nodeState = skillsContent.savedData[props.id]?.nodeState;
     const canSchedule = nodeState === "unlocked";
     const canViewLinks = nodeState !== "locked";
     const event = content.events.find(e => e.skill.id === props.id);

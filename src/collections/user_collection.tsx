@@ -2,12 +2,13 @@ import {
     buildCollection, buildEntityCallbacks, EntityCollection, EntityOnFetchProps, EntityReference,
 } from "firecms";
 import { IUser } from "../types/iuser.type";
+import { UserSchedulerView } from "../custom_entity_view/scheduler";
 
 const roles = {
     "student": "Student",
     "instructor": "Instructor",
     "admin": "Admin",
-    "super": "Super Admin"
+    // "super": "Super Admin"
 };
 
 const rolesCollection = buildCollection({
@@ -23,7 +24,6 @@ const rolesCollection = buildCollection({
         }
     }
 });
-
 
 const userCallbacks = buildEntityCallbacks({
     onPreSave: ({
@@ -46,7 +46,7 @@ const userCallbacks = buildEntityCallbacks({
     },
 });
 
-export function buildUsersCollection(organization?: string): EntityCollection<IUser> {
+export function buildUsersCollection(view: "admin" | "teacher" | "record", organization?: string, compositionId?: string): EntityCollection<IUser> {
     return buildCollection<IUser>({
         name: "Users",
         description: "Manage all users",
@@ -54,17 +54,25 @@ export function buildUsersCollection(organization?: string): EntityCollection<IU
         path: "users",
         group: "Administration",
         defaultSize: "s",
-        subcollections: [
+        subcollections: view === "admin" ? [
             rolesCollection
-        ],
+        ] : [],
         icon: "AccountCircle",
         inlineEditing: false,
         permissions: ({ authController }) => ({
-            edit: authController.extra?.roles?.includes("super"),
+            edit: view !== "teacher",
             create: false,
             // we have created the roles object in the navigation builder
             delete: false
         }),
+        views: [
+            {
+                path: "schedule",
+                name: "Schedule",
+                builder: ({entity}) =>
+                    <UserSchedulerView entity={entity} compositionId={compositionId}/>
+            }
+        ],
         forceFilter: organization ? { organizations: ["array-contains", organization] } : undefined,
         properties: {
             email: {

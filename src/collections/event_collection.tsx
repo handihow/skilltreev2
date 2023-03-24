@@ -11,9 +11,10 @@ import { getSkillPath } from "../services/composition.service";
 import { IEvent } from "../types/ievent.type";
 
 function addHours(date: Date, hours: number) {
-    date.setHours(date.getHours() + hours);
-  
-    return date;
+    const endDate = new Date(date);
+    endDate.setHours(endDate.getHours() + hours);
+    
+    return endDate;
   }
 
 export function buildEventsCollection(

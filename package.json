@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aldabil/react-scheduler": "^2.7.1",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@fortawesome/fontawesome-svg-core": "^6.3.0",
@@ -18,9 +19,10 @@
     "@mui/icons-material": "^5",
     "@mui/lab": "^5.0.0-alpha.120",
     "@mui/material": "^5.11.10",
-    "@mui/x-date-pickers": "^5.0.20",
+    "@mui/x-date-pickers": "^6.0.2",
     "axios": "^1.3.4",
     "beautiful-skill-tree": "file:.yalc/beautiful-skill-tree",
+    "date-fns": "^2.29.3",
     "firebase": "^9",
     "firecms": "^2.0.0-beta.2",
     "react": "^18.2.0",

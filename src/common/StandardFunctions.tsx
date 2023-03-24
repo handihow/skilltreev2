@@ -1,6 +1,6 @@
 import { SavedDataType } from "beautiful-skill-tree";
 import { ISkill } from "../types/iskill.type";
-import SkillContent from "./SkillContent";
+import SkillContent from "../widgets/SkillContent";
 
 export const countSelectedSkills = (data: SavedDataType[]) => {
     let count = 0;

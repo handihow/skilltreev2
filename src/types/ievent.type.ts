@@ -2,7 +2,7 @@ export type IEvent = {
     id?: string;
     title: string;
     start: any;
-    end: Date;
+    end: any;
     disabled?: boolean;
     color?: string;
     editable?: boolean;

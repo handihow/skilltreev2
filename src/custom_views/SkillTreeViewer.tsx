@@ -17,7 +17,7 @@ import {
     Typography,
 } from "@mui/material";
 import {
-    useAuthController, useSnackbarController, useStorageSource,
+    useAuthController, useSideEntityController, useSnackbarController, useStorageSource,
 } from "firecms";
 import { useNavigate, useParams } from "react-router";
 import { AutocompleteOption } from "../types/autoCompleteOption.type";
@@ -34,6 +34,7 @@ import { collection, onSnapshot, query, Unsubscribe, where } from "firebase/fire
 import { createDocRef, db } from "../services/firestore";
 import { IEvaluation } from "../types/ievaluation.type";
 import { IEvent } from "../types/ievent.type";
+import { buildUsersCollection } from "../collections/user_collection";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars
@@ -42,6 +43,7 @@ export function SkillTreeViewer() {
     // hook to do operations related to authentication
     const authController = useAuthController();
     const storageSource = useStorageSource();
+    const sideEntityController = useSideEntityController();
 
     const initialList: ISkilltree[] = []
     const [skilltreesList, setSkilltreeList] = useState(initialList);
@@ -90,7 +92,10 @@ export function SkillTreeViewer() {
         if (error3) return handleError(error3);
         const [labels, error4] = await getSharedUsers(id, authController.user.uid);
         if (error4) return handleError(error4);
-        if (labels) setUsers([initialAutocompleteOption, ...labels]);
+        if (labels?.length) {
+            setUsers([...labels, initialAutocompleteOption]);
+            setSelectedUser(labels[0]);
+        };
         if (url) setUrl(url);
         setSkilltreeList(skilltrees || []);
         setComposition(composition);
@@ -104,14 +109,14 @@ export function SkillTreeViewer() {
     useEffect(() => {
         const evaluationColRef = collection(db, 'evaluations');
         const eventColRef = collection(db, 'events');
-        if(!selectedUser) return setEvaluations([]); 
+        if (!selectedUser) return setEvaluations([]);
         const studentRef = createDocRef("users/" + selectedUser.id);
         const compositionRef = createDocRef("compositions/" + id);
         const evaluationQuery = query(evaluationColRef, where("student", "==", studentRef), where("composition", "==", compositionRef));
         const unsubscribe = onSnapshot(evaluationQuery, {
             next: (snap) => {
                 const evaluations = snap.docs.map((doc) => {
-                    return {id: doc.id, ...doc.data()} as IEvaluation;
+                    return { id: doc.id, ...doc.data() } as IEvaluation;
                 });
                 setEvaluations(evaluations);
             },
@@ -126,9 +131,8 @@ export function SkillTreeViewer() {
         const unsubscribe2 = onSnapshot(eventsQuery, {
             next: (snap) => {
                 const events = snap.docs.map((doc) => {
-                    return {id: doc.id, ...doc.data()} as IEvent;
+                    return { id: doc.id, ...doc.data() } as IEvent;
                 });
-                console.log(events);
                 setEvents(events);
             },
             error: (error) => {
@@ -153,6 +157,14 @@ export function SkillTreeViewer() {
         if (!canSave) return handleError("Please ask your instructor to update the completion status of this skill. Changes will not be saved.");
         const error = await saveUserResults(selectedUser.id, treeId, composition?.id, skills, 0);
         if (error) return handleError(error, false);
+    }
+
+    const openUserRecord = () => {
+        sideEntityController.open({
+            entityId: selectedUser?.id,
+            path: "users",
+            collection: buildUsersCollection("teacher", undefined, composition?.id)
+        })
     }
 
     return (
@@ -209,17 +221,18 @@ export function SkillTreeViewer() {
                                                 <TextField sx={{ width: 300, marginTop: 3 }} id="text-field" label="Filter skills" onChange={(event: any) => handleFilter(event.target.value || "")} />
                                             </CardContent>
                                             <CardActions>
-                                                <AlertDialog
+                                                {isAdmin && <AlertDialog
                                                     agreeFunction={resetSkills}
                                                     functionParams={undefined}
                                                     agreeBtnText="Yes, reset!"
                                                     openBtnText="Reset"
                                                     alertWarning="Are you sure that you want to reset the completion status of all skills?"
                                                     btnColor="error"
-                                                />
+                                                />}
                                                 <Button aria-label="delete" size="small" onClick={() => navigate(-1)}>
                                                     Back
                                                 </Button>
+                                                {isAdmin && <Button onClick={openUserRecord}>User record</Button>}
                                                 {composition?.pendingApprovalUsers?.length && composition.pendingApprovalUsers.length > 0 ?
                                                     <Button onClick={() => navigate("/share_requests/" + id)}>Approvals</Button> : <React.Fragment></React.Fragment>}
                                             </CardActions>

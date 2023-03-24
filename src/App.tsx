@@ -129,7 +129,7 @@ export default function App() {
         if(roles && roles.includes("super") && user) {
             setCollections([
                 buildCompositionsCollection(false), 
-                buildUsersCollection(), 
+                buildUsersCollection("admin"), 
                 buildShareRequestCollection("admin", user),
                 evaluationModelCollection, 
                 buildEvaluationsCollection("evaluations"),
@@ -139,7 +139,7 @@ export default function App() {
         } else if(roles && roles.includes("admin") && organization){
             setCollections([
                 buildCompositionsCollection(false, organization), 
-                buildUsersCollection(organization), 
+                buildUsersCollection("admin", organization), 
                 evaluationModelCollection,
             ])
         } else if(roles && roles.includes("admin")){
