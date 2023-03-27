@@ -37,9 +37,9 @@ export default function SkillContent(props: {
     const skillsContent = useContext(SkillsContext);
     const skill = skillsContent.skills.find(s => s.id === props.id);
     const nodeState = skillsContent.savedData[props.id]?.nodeState;
-    const canSchedule = nodeState === "unlocked";
+    const canSchedule = nodeState === "unlocked" || (!content.selectedUser && content.users.length > 0);
     const canViewLinks = nodeState !== "locked";
-    const event = content.events.find(e => e.skill.id === props.id);
+    const event = content.events.find(e => e.skill?.id === props.id);
     const colorOfEvent = event?.color ? event.color : "blueDark";
     const eventColor = CHIP_COLORS[colorOfEvent].color;
     const eventText = CHIP_COLORS[colorOfEvent].text;
@@ -133,7 +133,7 @@ export default function SkillContent(props: {
                     collection: buildEventsCollection(
                         "edit",
                         authController.user?.uid,
-                        content.selectedUser?.id,
+                        content.selectedUser ? [content.selectedUser.id] : content.users.map(u => u.id),
                         content.composition?.id,
                         skill?.skilltree, skill?.id,
                         skill?.title
@@ -142,7 +142,6 @@ export default function SkillContent(props: {
             default:
                 break;
         }
-
     }
 
     const deleteSkill = async () => {
@@ -170,7 +169,7 @@ export default function SkillContent(props: {
         <React.Fragment>
             {props.optional && <Chip label="optional" variant="filled" color="primary" sx={{ marginBottom: 3 }} />}
             {gradeChip.hasGrade && <Chip label={gradeChip.label} variant="filled" sx={{ backgroundColor: gradeChip.bgColor, color: gradeChip.color, marginBottom: 3 }} />}
-            {event && <Chip label={"Due " + convertToDateTimeString(eventDate)} variant="filled" sx={{ backgroundColor: eventColor, color: eventText, marginBottom: 3 }}/>}
+            {canSchedule && event && <Chip label={"Due " + convertToDateTimeString(eventDate)} variant="filled" sx={{ backgroundColor: eventColor, color: eventText, marginBottom: 3 }}/>}
             <div
                 dangerouslySetInnerHTML={{ __html: props.description }}
             />

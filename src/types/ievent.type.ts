@@ -9,12 +9,13 @@ export type IEvent = {
     deletable?: boolean;
     draggable?: boolean;
     allDay?: boolean;
-    student?: any;
+    students?: any;
     teacher?: any;
     composition?: any;
     skilltree?: any;
     skill?: any;
     evaluationModel?: any;
+    plannedForGroup?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }

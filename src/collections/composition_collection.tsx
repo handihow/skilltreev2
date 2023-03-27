@@ -20,6 +20,7 @@ const compositionCallbacks = buildEntityCallbacks({
         values,
         status
     }) => {
+        console.log('pre save composition record called');
         // return the updated values
         values.user = values.user.id;
         if(values.sharedUsers) {
@@ -83,7 +84,6 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
                 dataType: "reference",
                 path: "users",
                 previewProperties: ["displayName", "email"],
-                validation: {required: true},
                 readOnly: true
             }),
             sharedUsers: buildProperty({
@@ -97,13 +97,6 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
                 },
                 expanded: false
             }),
-            // loggedInUsersOnly: {
-            //     name: "Logged in only",
-            //     description: "Only logged in users can view the SkillTree",
-            //     dataType: "boolean",
-            //     defaultValue: true,
-            //     columnWidth: 200
-            // },
             canCopy: {
                 name: "Can copy",
                 description: "Users can copy the SkillTree if it is shared",
@@ -331,14 +324,18 @@ export function buildCompositionsCollection(simple: boolean, organization?: stri
             lastUpdate: {
                 name: "Last update",
                 dataType: "date",
-                readOnly: true,
-                autoValue: "on_update"
+                autoValue: "on_update",
+                disabled: {
+                    hidden: true
+                }
             },
             createdAt: buildProperty({
                 dataType: "date",
                 name: "Created at",
                 autoValue: "on_create",
-                readOnly: true
+                disabled: {
+                    hidden: true
+                }
             })
         },
         callbacks: compositionCallbacks

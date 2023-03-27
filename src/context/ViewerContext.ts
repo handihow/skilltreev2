@@ -9,7 +9,8 @@ type ViewerSettings = {
     mode: "editor" | "teacher" | "student" | "initializing", 
     composition: IComposition | null,
     evaluationModel: IEvaluationModel | null,
-    selectedUser: AutocompleteOption | null, 
+    selectedUser: AutocompleteOption | null,
+    users: AutocompleteOption[],
     evaluations: IEvaluation[],
     events: IEvent[]
 }
@@ -19,6 +20,7 @@ export const ViewerContext = createContext<ViewerSettings>({
     composition: null,
     evaluationModel: null,
     selectedUser: null,
+    users: [],
     evaluations: [],
     events: []
 });

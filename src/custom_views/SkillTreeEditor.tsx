@@ -168,6 +168,7 @@ export function SkillTreeEditor() {
                         composition,
                         evaluationModel: null,
                         selectedUser: null,
+                        users: [],
                         evaluations: [],
                         events: []
                     }}>

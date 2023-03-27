@@ -1,13 +1,11 @@
 // import React from "react";
 import { Box, CircularProgress } from "@mui/material";
-import { Entity } from "firecms";
-import { IUser } from "../types/iuser.type";
+import { useAuthController } from "firecms";
 import { UserScheduler } from "../widgets/UserScheduler";
 
-export function UserSchedulerView({ entity, compositionId }: {
-    entity: Entity<IUser> | undefined,
-    compositionId: string | undefined
-}) {
+export function MySchedule() {
+    // hook to do operations related to authentication
+    const authController = useAuthController();
 
     return (
         <Box
@@ -22,8 +20,8 @@ export function UserSchedulerView({ entity, compositionId }: {
                 justifyItems={"center"}>
 
                 <Box p={1}>
-                    {entity ?
-                        <UserScheduler userId={entity.id} compositionId={compositionId} /> : <CircularProgress />}
+                    {authController.user ?
+                        <UserScheduler userId={authController.user.uid} compositionId={undefined} /> : <CircularProgress />}
                 </Box>
 
             </Box>

@@ -34,6 +34,7 @@ import { evaluationModelCollection } from "./collections/evaluation_model_collec
 import { buildEvaluationsCollection } from "./collections/evaluation_collection";
 import { buildEventsCollection } from "./collections/event_collection";
 import { ShareSkillTreeView } from "./custom_views/ShareSkillTree";
+import { MySchedule } from "./custom_views/MySchedule";
 library.add(fas)
 library.add(fab)
 
@@ -53,6 +54,14 @@ const customViews: CMSView[] = [
         description: "SkillTrees shared with you",
         view: <MySkillTreesView view={"shared"} />,
         icon: "NaturePeople"
+    },
+    {
+        path: "my-schedule",
+        name: "My Schedule",
+        group: "Content",
+        description: "Your schedule",
+        view: <MySchedule />,
+        icon: "Today"
     },
     {
         path: "compositions/:id/viewer",
@@ -156,7 +165,7 @@ export default function App() {
         views={customViews}
         collections={collections} 
         firebaseConfig={firebaseConfig}
-        signInOptions={['google.com', 'microsoft.com', 'password', 'anonymous']}
+        signInOptions={['google.com', 'microsoft.com', 'password']}
         toolbarExtraWidget={githubLink}
         logo="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTreeIcon.png?alt=media&token=af824f13-6bfd-46f9-9ec8-35ff020e95c6"
         logoDark="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTree_T_icon.png?alt=media&token=06b80792-f01a-4cfc-9de4-0f89f6d1b3c0"

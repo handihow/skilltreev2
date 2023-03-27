@@ -93,7 +93,7 @@ export function SkillTreeViewer() {
         const [labels, error4] = await getSharedUsers(id, authController.user.uid);
         if (error4) return handleError(error4);
         if (labels?.length) {
-            setUsers([...labels, initialAutocompleteOption]);
+            setUsers([...labels]);
             setSelectedUser(labels[0]);
         };
         if (url) setUrl(url);
@@ -106,12 +106,12 @@ export function SkillTreeViewer() {
         initialize();
     }, [])
 
-    useEffect(() => {
+    const subscribeToEvaluations = () => {
         const evaluationColRef = collection(db, 'evaluations');
-        const eventColRef = collection(db, 'events');
-        if (!selectedUser) return setEvaluations([]);
-        const studentRef = createDocRef("users/" + selectedUser.id);
         const compositionRef = createDocRef("compositions/" + id);
+        if (!selectedUser)
+            return setEvaluations([])
+        const studentRef = createDocRef("users/" + selectedUser.id);
         const evaluationQuery = query(evaluationColRef, where("student", "==", studentRef), where("composition", "==", compositionRef));
         const unsubscribe = onSnapshot(evaluationQuery, {
             next: (snap) => {
@@ -127,8 +127,18 @@ export function SkillTreeViewer() {
                 })
             }
         });
-        const eventsQuery = query(eventColRef, where("student", "==", studentRef), where("composition", "==", compositionRef));
-        const unsubscribe2 = onSnapshot(eventsQuery, {
+        return unsubscribe;
+    }
+
+    const subscribeToEvents = () => {
+        const eventColRef = collection(db, 'events');
+        const compositionRef = createDocRef("compositions/" + id);
+        let eventsQuery = query(eventColRef, where("plannedForGroup", "==", true), where("composition", "==", compositionRef));
+        if (selectedUser) {
+            const studentRef = createDocRef("users/" + selectedUser.id);
+            eventsQuery = query(eventColRef, where("students", "array-contains", studentRef), where("composition", "==", compositionRef));
+        };
+        const unsubscribe = onSnapshot(eventsQuery, {
             next: (snap) => {
                 const events = snap.docs.map((doc) => {
                     return { id: doc.id, ...doc.data() } as IEvent;
@@ -142,7 +152,13 @@ export function SkillTreeViewer() {
                 })
             }
         });
-        setSubscriptions([...subscriptions, unsubscribe, unsubscribe2]);
+        return unsubscribe;
+    }
+
+    useEffect(() => {
+        const unsubscribe = subscribeToEvents();
+        const unsubscribe2 = subscribeToEvaluations();
+        setSubscriptions(unsubscribe2 ? [...subscriptions, unsubscribe, unsubscribe2] : [...subscriptions, unsubscribe]);
         return () => {
             subscriptions.forEach(unsubscribe => unsubscribe());
         }
@@ -190,6 +206,7 @@ export function SkillTreeViewer() {
                         composition,
                         evaluationModel,
                         selectedUser,
+                        users,
                         evaluations,
                         events
                     }}>
@@ -212,12 +229,14 @@ export function SkillTreeViewer() {
                                                             return option.id === value.id
                                                         }}
                                                         disablePortal
+                                                        disableClearable={users.length < 2}
                                                         id="combo-box-demo"
                                                         options={users}
                                                         sx={{ width: 300 }}
                                                         renderInput={(params) => <TextField {...params} label="User results" />}
                                                     />
                                                 }
+                                                {!selectedUser && <Typography variant="label">Todo planning applies to entire group</Typography>}
                                                 <TextField sx={{ width: 300, marginTop: 3 }} id="text-field" label="Filter skills" onChange={(event: any) => handleFilter(event.target.value || "")} />
                                             </CardContent>
                                             <CardActions>
@@ -232,7 +251,7 @@ export function SkillTreeViewer() {
                                                 <Button aria-label="delete" size="small" onClick={() => navigate(-1)}>
                                                     Back
                                                 </Button>
-                                                {isAdmin && <Button onClick={openUserRecord}>User record</Button>}
+                                                {isAdmin  && selectedUser && <Button onClick={openUserRecord}>User record</Button>}
                                                 {composition?.pendingApprovalUsers?.length && composition.pendingApprovalUsers.length > 0 ?
                                                     <Button onClick={() => navigate("/share_requests/" + id)}>Approvals</Button> : <React.Fragment></React.Fragment>}
                                             </CardActions>

@@ -1,5 +1,5 @@
 
-import { buildEnumValueConfig, ChipColorScheme, EnumValueConfig, EnumValues } from 'firecms';
+import { buildEnumValueConfig, ChipColorScheme, EnumValueConfig } from 'firecms';
 import { ISkill } from '../types/iskill.type';
 import { ISkilltree } from '../types/iskilltree.type';
 
@@ -721,7 +721,7 @@ export const iconImages = [
   }
 ]
 
-export const chipColors : EnumValues = [
+export const chipColors : EnumValueConfig[] = [
   {id: "blueLighter", label: "Lighter blue", color: "blueLighter" },
   {id: "cyanLighter", label: "Lighter cyan", color: "cyanLighter" },
   {id: "tealLighter", label: "Lighter teal", color: "tealLighter" },

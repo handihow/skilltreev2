@@ -20,7 +20,7 @@ function addHours(date: Date, hours: number) {
 export function buildEventsCollection(
     view: "edit" | "table",
     teacherId?: string,
-    studentId?: string,
+    studentIds?: string[],
     compositionId?: string,
     skilltreeId?: string,
     skillId?: string,
@@ -33,13 +33,14 @@ export function buildEventsCollection(
         }) => {
             // return the updated values
             if (status === "new") {
-                if(!skillId || !studentId || !teacherId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
+                if(!skillId || !studentIds || !teacherId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
                 const [path, error] = await getSkillPath(skillId);
                 if(error || !path) throw new Error("Missing path info: " + error);
-                values.student = new EntityReference(studentId, "users");
+                values.students = studentIds.map((studentId: string) => new EntityReference(studentId, "users"));
                 values.teacher = new EntityReference(teacherId, "users");
                 values.composition = new EntityReference(compositionId, "compositions");
                 values.skilltree = new EntityReference(skilltreeId, "compositions/" + compositionId + "/skilltrees");
+                values.plannedForGroup = studentIds.length > 1;
                 const split = path.split("/");
                 split.pop()
                 values.skill = new EntityReference(skillId, split.join("/"));
@@ -112,12 +113,15 @@ export function buildEventsCollection(
             previewProperties: ["title"],
             readOnly: true
         }
-        properties.student = {
-            name: "Student",
-            dataType: "reference",
-            path: "users",
-            previewProperties: ["displayName", "email"],
-            readOnly: true
+        properties.students = {
+            name: "Students",
+            dataType: "array",
+            of: {
+                dataType: "reference",
+                path: "users",
+                previewProperties: ["displayName", "email"],
+                readOnly: true
+            }
         };
         properties.teacher = {
             name: "Teacher",
@@ -125,6 +129,10 @@ export function buildEventsCollection(
             path: "users",
             previewProperties: ["displayName", "email"],
             readOnly: true
+        };
+        properties.plannedForGroup = {
+            name: "Group",
+            dataType: "boolean"
         }
     }
 
