@@ -140,6 +140,7 @@ export function buildEventsCollection(
         dataType: "date",
         name: "Created at",
         autoValue: "on_create",
+        readOnly: true,
         disabled: {
             hidden: view === "edit"
         }
@@ -148,6 +149,7 @@ export function buildEventsCollection(
         dataType: "date",
         name: "Updated at",
         autoValue: "on_update",
+        readOnly: true,
         disabled: {
             hidden: view === "edit"
         }

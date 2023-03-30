@@ -17,6 +17,7 @@ import { AutocompleteOption } from "../types/autoCompleteOption.type";
 import { EntityStatus } from "firecms";
 import { IUser } from "../types/iuser.type";
 import { IComposition } from "../types/icomposition.type";
+import { IResult } from "../types/iresult.type";
 
 export const getUserRoles = async (userId: string): Promise<[string[] | null, string | null]> => {
     const userRolesRef = collection(db, 'users/' + userId + '/roles')
@@ -42,7 +43,7 @@ export const getUserOrganization = async (userId: string): Promise<[string | und
         const snap = await getDoc(userRef);
         if (!snap.exists()) return [undefined, "No user record found"]
         const { organizations } = snap.data();
-        const primaryOrganization = organizations ? organizations[0] : undefined;
+        const primaryOrganization = organizations ? organizations[0].id : undefined;
         return [primaryOrganization, null];
     } catch (err: any) {
         return [undefined, err.message]
@@ -147,10 +148,7 @@ export const saveUserResults = async (userId: string | undefined, treeId: string
     } catch (e: any) {
         return e.message as string;
     }
-
 }
-
-
 
 export const updateSharedUserStatus = async (sharedUserIds: string[], compositionId: string, status: EntityStatus) => {
     const compositionRef = doc(db, 'compositions', compositionId);
@@ -208,3 +206,14 @@ export const addOrRemoveSharedUser = async (userId: string, compositionId: strin
     }
 }
 
+export const getUserResults = async (userId: string): Promise<[IResult | null, string | null]> => {
+    const docRef = doc(db, 'results', userId);
+    try {
+        const snap = await getDoc(docRef);
+        if(!snap.exists) return [null, "No result record found"];
+        const result = {id: snap.id, ...snap.data()} as IResult;
+        return [result, null];
+    } catch(err: any) {
+        return [null, err.message as string];
+    }
+}

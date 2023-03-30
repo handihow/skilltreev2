@@ -76,13 +76,19 @@ export function buildShareRequestCollection(mode: "requesting" | "approving" | "
                 dataType: "date",
                 name: "Created at",
                 autoValue: "on_create",
-                readOnly: true
+                readOnly: true,
+                disabled: {
+                    hidden: mode === "requesting"
+                }
             }),
             updatedAt: buildProperty({
                 dataType: "date",
                 name: "Updated at",
                 autoValue: "on_update",
-                readOnly: true
+                readOnly: true,
+                disabled: {
+                    hidden: mode === "requesting"
+                }
             })
         },
         callbacks: shareRequestCallbacks,

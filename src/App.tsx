@@ -58,7 +58,7 @@ const customViews: CMSView[] = [
     {
         path: "my-schedule",
         name: "My Schedule",
-        group: "Content",
+        group: "Schedule",
         description: "Your schedule",
         view: <MySchedule />,
         icon: "Today"

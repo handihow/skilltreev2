@@ -1,10 +1,12 @@
-import { Timestamp, collection, addDoc, updateDoc, doc, getDoc, getDocs, orderBy, query, collectionGroup, deleteDoc, where } from "firebase/firestore";
+import { Timestamp, collection, addDoc, updateDoc, doc, getDoc, getDocs, orderBy, query, collectionGroup, deleteDoc, where, getCountFromServer } from "firebase/firestore";
 import { db } from "./firestore";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "./firestore";
 import { standardChildSkills, standardRootSkill } from "../common/StandardData";
 import { IComposition } from "../types/icomposition.type";
 import { ISkilltree } from "../types/iskilltree.type";
+import { IResult } from "../types/iresult.type";
+import { ISkilltreeResult } from "../types/skilltree.result.model";
 
 export const getComposition = async (id: string): Promise<[IComposition | null, string | null]> => {
     const compositionRef = doc(db, 'compositions/' + id);
@@ -124,7 +126,6 @@ export const copyComposition = async (composition: IComposition, userId: string,
     console.log('updated the composition');
     //then copy all the skilltrees
     const [skilltrees, error] = await getCompositionSkilltrees(composition.id);
-    console.log('found ' + skilltrees?.length + ' skilltrees');
     if (error || !skilltrees) return "No skilltrees found";
 
     for (const skilltree of skilltrees) {
@@ -248,3 +249,27 @@ export const deleteSkillsOfSkilltree = async (skilltreeId: string) => {
         return err.message as string;
     }
 }
+
+
+export const getCompositionSkillCount = async (compositionId: string, userId: string) : Promise<[number, number, string | null]> => {
+    try {
+        const skillsColRef = collectionGroup(db, 'skills');
+        const skillQuery = query(skillsColRef, where("composition", "==", compositionId), orderBy("order", "asc"));
+        const snapshot = await getCountFromServer(skillQuery);
+        const skillCount = snapshot.data().count;
+        const resultColRef = collection(db, 'results', userId, 'skilltrees');
+        const resultQuery = query(resultColRef, where("compositionId", "==", compositionId));
+        const snapshot2 = await getDocs(resultQuery);
+        let completedCount = 0;
+        for (const doc of snapshot2.docs) {
+            const result = doc.data() as ISkilltreeResult;
+            const completed = Object.keys(result.skills).filter(key => result.skills[key].nodeState === "selected").length;
+            completedCount += completed;
+        }
+        return [skillCount, completedCount, null];
+    } catch(e: any) {
+        return [0, 0, e.message]
+    }
+    
+}
+

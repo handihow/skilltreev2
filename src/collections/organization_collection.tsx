@@ -10,10 +10,10 @@ export const organizationCollection = buildCollection<IOrganization>({
     icon: "CorporateFare",
     defaultSize: "s",
     permissions: ({ authController }) => ({
-        edit: true,
-        create: true,
+        edit: authController.extra?.roles.includes("admin"),
+        create: authController.extra?.roles.includes("admin"),
         // we have created the roles object in the navigation builder
-        delete: true
+        delete: authController.extra?.roles.includes("super")
     }),
     properties: {
         name: {

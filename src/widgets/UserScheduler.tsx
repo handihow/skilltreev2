@@ -1,11 +1,12 @@
 // import React from "react";
-import { Box, Button } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import { useAuthController } from "firecms";
 import { Scheduler } from "@aldabil/react-scheduler";
 import { EventActions, ProcessedEvent } from "@aldabil/react-scheduler/types";
 import { addEvent, deleteEvent, editEvent, getUserEvents } from "../services/events.service";
 import { CHIP_COLORS } from "../common/StandardData";
 import { createEvent, EventAttributes} from 'ics';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 export function UserScheduler({ userId, compositionId }: {
     userId: string,
@@ -134,7 +135,7 @@ export function UserScheduler({ userId, compositionId }: {
                         onConfirm={handleConfirm}
                         viewerExtraComponent={(fields, event) => {
                             return (
-                              <Button onClick={() => downloadToICS(event)}>Download to ICS</Button>
+                              <IconButton onClick={() => downloadToICS(event)}><FileDownloadIcon /></IconButton>
                             );
                           }}
                     />

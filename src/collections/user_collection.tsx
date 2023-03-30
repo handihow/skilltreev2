@@ -1,15 +1,30 @@
 import {
-    buildCollection, buildEntityCallbacks, EntityCollection, EntityOnFetchProps, EntityReference,
+    buildCollection, buildEntityCallbacks, EntityCollection, EntityReference,
 } from "firecms";
 import { IUser } from "../types/iuser.type";
 import { UserSchedulerView } from "../custom_entity_view/scheduler";
+import { UserEvaluationsView } from "../custom_entity_view/userEvals";
+
+const roleCallbacks = buildEntityCallbacks({
+    onPreSave: ({
+        entityId,
+        values,
+        status,
+        context
+    }) => {
+        const canAssignAdminRole = context.authController.extra?.roles.includes("admin");
+        if (status === "new" && entityId === "admin" && !canAssignAdminRole)
+            throw Error("Only admins can assign the admin role. Please contact support if you require admin rights.");
+        return values;
+    }
+});
 
 const roles = {
     "student": "Student",
     "instructor": "Instructor",
     "admin": "Admin",
-    // "super": "Super Admin"
 };
+
 
 const rolesCollection = buildCollection({
     path: "roles",
@@ -22,31 +37,13 @@ const rolesCollection = buildCollection({
             description: "User has this role",
             dataType: "boolean"
         }
-    }
+    },
+    callbacks: roleCallbacks
 });
 
-const userCallbacks = buildEntityCallbacks({
-    onPreSave: ({
-        values,
-    }) => {
-        // return the updated values
-        if (values.organizations) {
-            values.organizations = values.organizations.map((o: { id: any; }) => o.id);
-        }
-        return values;
-    },
-
-    onFetch({
-        entity,
-    }: EntityOnFetchProps) {
-        if (entity.values.organizations) {
-            entity.values.organizations = entity.values.organizations.map((o: string) => new EntityReference(o, "organizations"));
-        }
-        return entity;
-    },
-});
 
 export function buildUsersCollection(view: "admin" | "teacher" | "record", organization?: string, compositionId?: string): EntityCollection<IUser> {
+
     return buildCollection<IUser>({
         name: "Users",
         description: "Manage all users",
@@ -69,11 +66,17 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
             {
                 path: "schedule",
                 name: "Schedule",
-                builder: ({entity}) =>
-                    <UserSchedulerView entity={entity} compositionId={compositionId}/>
+                builder: ({ entity }) =>
+                    <UserSchedulerView entity={entity} compositionId={compositionId} />
+            },
+            {
+                path: "evaluations",
+                name: "Grades",
+                builder: ({ entity }) =>
+                    <UserEvaluationsView entity={entity} compositionId={compositionId} />
             }
         ],
-        forceFilter: organization ? { organizations: ["array-contains", organization] } : undefined,
+        forceFilter: organization ? { organizations: ["array-contains", new EntityReference(organization, "organizations")] } : undefined,
         properties: {
             email: {
                 name: "Email",
@@ -131,6 +134,6 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
             //     expanded: true
             // }
         },
-        callbacks: userCallbacks
+        // callbacks: userCallbacks
     })
 };

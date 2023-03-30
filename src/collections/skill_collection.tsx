@@ -5,6 +5,7 @@ import CustomHTMLPreview from "../custom_field_preview/HTMLPreview";
 import { deleteFromPathRecursively, getCountFromPath } from "../services/firestore";
 import { MoveDownAction, MoveUpAction } from "../actions/move.actions";
 import { ISkill } from "../types/iskill.type";
+import { RichTextEditorField } from "../custom_fields/RTE";
 
 
 const skillCallbacks = buildEntityCallbacks({
@@ -78,6 +79,7 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
                 name: "Description",
                 dataType: "string",
                 multiline: true,
+                Field: RichTextEditorField,
                 Preview: CustomHTMLPreview
             },
             optional: {

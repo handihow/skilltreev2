@@ -11,7 +11,7 @@ export type IUser = {
     creationTime?: any;
     lastSignInTime?: any;
     type?: string;
-    organizations?: string[];
+    organizations?: any[];
     subjects?: string;
     groups?: string;
     programs?: string;

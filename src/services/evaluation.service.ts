@@ -1,6 +1,7 @@
-import { DocumentReference, getDoc, collection, query, where, getDocs, addDoc } from "firebase/firestore";
+import { DocumentReference, getDoc, collection, query, where, getDocs, addDoc, collectionGroup } from "firebase/firestore";
 import { IEvaluationModel } from "../types/ievaluation.model.type";
 import { IEvaluation } from "../types/ievaluation.type";
+import { ISkill } from "../types/iskill.type";
 
 import { db } from "./firestore";
 
@@ -41,4 +42,25 @@ export const addEvaluationToHistory = (evaluation: IEvaluation) => {
     } catch (err: any) {
         return err.message as string;
     }
+}
+
+
+export const getCompositionEvaluations = async (compositionId: string, userId: string) : Promise<[ISkill[], IEvaluation[], string | null]> => {
+    try {
+        const skillsColRef = collectionGroup(db, 'skills');
+        const skillsQuery = query(skillsColRef, where("composition", "==", compositionId));
+        const snap = await getDocs(skillsQuery);
+        const skills: ISkill[] = [];
+        const evaluations: IEvaluation[] = [];
+        for (const doc of snap.docs) {
+            const skill = {id: doc.id, parent: doc.ref.path.split("/"), path: doc.ref.path, ...doc.data()} as ISkill;
+            skills.push(skill);
+            const [evaluation, _error] = await getEvaluatedSkill(userId, doc.id);
+            if(evaluation) evaluations.push(evaluation);
+        }
+        return [skills, evaluations, null];
+    } catch(e: any) {
+        return [[],[], e.message as string];
+    }
+
 }
