@@ -64,16 +64,16 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
         }),
         views: [
             {
-                path: "schedule",
-                name: "Schedule",
-                builder: ({ entity }) =>
-                    <UserSchedulerView entity={entity} compositionId={compositionId} />
-            },
-            {
                 path: "evaluations",
                 name: "Grades",
                 builder: ({ entity }) =>
                     <UserEvaluationsView entity={entity} compositionId={compositionId} />
+            },
+            {
+                path: "schedule",
+                name: "Schedule",
+                builder: ({ entity }) =>
+                    <UserSchedulerView entity={entity} compositionId={compositionId} />
             }
         ],
         forceFilter: organization ? { organizations: ["array-contains", new EntityReference(organization, "organizations")] } : undefined,

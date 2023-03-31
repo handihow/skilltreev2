@@ -42,6 +42,7 @@ export type ISkill = {
     compositionTitle?: string;
     table?: string;
     gradeSkill?: "default" | "not_graded" | "graded";
+    weight?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }

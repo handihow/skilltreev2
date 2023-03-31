@@ -144,6 +144,17 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
                     }
                 ]
             },
+            weight: {
+                name: "Weight",
+                dataType: "number",
+                description: "You can set weight to integers between 1-10 (default = 1)",
+                defaultValue: 1,
+                validation: {
+                    min: 1,
+                    max: 10,
+                    integer: true
+                }
+            },
             createdAt: buildProperty({
                 dataType: "date",
                 name: "Created at",

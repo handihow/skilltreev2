@@ -1,4 +1,4 @@
-import { DocumentReference, getDoc, collection, query, where, getDocs, addDoc, collectionGroup } from "firebase/firestore";
+import { DocumentReference, getDoc, collection, query, where, getDocs, addDoc, collectionGroup, doc } from "firebase/firestore";
 import { IEvaluationModel } from "../types/ievaluation.model.type";
 import { IEvaluation } from "../types/ievaluation.type";
 import { ISkill } from "../types/iskill.type";
@@ -51,13 +51,18 @@ export const getCompositionEvaluations = async (compositionId: string, userId: s
         const skillsQuery = query(skillsColRef, where("composition", "==", compositionId));
         const snap = await getDocs(skillsQuery);
         const skills: ISkill[] = [];
-        const evaluations: IEvaluation[] = [];
         for (const doc of snap.docs) {
             const skill = {id: doc.id, parent: doc.ref.path.split("/"), path: doc.ref.path, ...doc.data()} as ISkill;
             skills.push(skill);
-            const [evaluation, _error] = await getEvaluatedSkill(userId, doc.id);
-            if(evaluation) evaluations.push(evaluation);
         }
+        const evaluationColRef = collection(db, 'evaluations');
+        const compositionDoc = doc(db, "compositions", compositionId);
+        const studentDoc = doc(db, 'users', userId);
+        const evaluationQuery = query(evaluationColRef, where("composition", "==", compositionDoc), where("student", "==", studentDoc));
+        const evalSnap = await getDocs(evaluationQuery);
+        const evaluations: IEvaluation[] = evalSnap.docs.map(doc => {
+            return { id: doc.id, ...doc.data()} as IEvaluation;
+        })
         return [skills, evaluations, null];
     } catch(e: any) {
         return [[],[], e.message as string];

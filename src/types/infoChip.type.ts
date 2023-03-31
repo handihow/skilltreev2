@@ -1,6 +1,5 @@
 export type InfoChip = {
-    hasGrade: boolean,
-    label: string,
+    label: string | number,
     bgColor: any,
     color: any,
 }

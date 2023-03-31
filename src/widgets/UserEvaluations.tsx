@@ -9,11 +9,14 @@ import { IComposition } from "../types/icomposition.type";
 import { getComposition, getCompositionSkillCount, getCompositionSkilltrees } from "../services/composition.service";
 import { ISkill } from "../types/iskill.type";
 import { IEvaluation } from "../types/ievaluation.type";
-import { getCompositionEvaluations } from "../services/evaluation.service";
+import { getCompositionEvaluations, getEvaluationModel } from "../services/evaluation.service";
 import { ISkilltree } from "../types/iskilltree.type";
 import { TreeView, TreeItem } from "@mui/lab";
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { skillArrayToSkillTree } from "../common/StandardFunctions";
+import { calculateSkilltreeGrade, isGradedSkill, skillArrayToSkillTree } from "../common/StandardFunctions";
+import { IEvaluationModel } from "../types/ievaluation.model.type";
+import { CircularProgressWithLabel } from "./ProgressWithLabel";
+import { EvaluationResultViewer } from "./EvaluationResultViewer";
 
 export function UserEvaluations({ userId, compositionId }: {
     userId: string,
@@ -86,16 +89,41 @@ export function UserEvaluations({ userId, compositionId }: {
 
 function CompositionDetails({ compositionId, userId, expanded, handleChange }: { compositionId: string, userId: string, expanded: string | false, handleChange: Function }) {
 
+    const snackbarController = useSnackbarController();
+    const [isLoading, setIsLoading] = useState(true);
+
     const [composition, setComposition] = useState<IComposition | null>(null);
     const [skillCount, setSkillCount] = useState<number>(0);
+    const [skills, setSkills] = useState<ISkill[]>([]);
+    const [evaluationModel, setEvaluationModel] = useState<IEvaluationModel | null>(null);
+    const [evaluations, setEvaluations] = useState<IEvaluation[]>([]);
     const [completedCount, setCompletedCount] = useState<number>(0);
 
+    const handleError = (error: string, setLoading = true) => {
+        snackbarController.open({
+            type: "error",
+            message: "Could not retrieve your results: " + error
+        })
+        if (setLoading) setIsLoading(false)
+    }
+
     const initialize = async () => {
-        const [composition, _error] = await getComposition(compositionId);
+        const [composition, error] = await getComposition(compositionId);
+        if (error) handleError(error);
         if (composition) setComposition(composition);
         const [skillCount, completedCount] = await getCompositionSkillCount(compositionId, userId);
         if (skillCount) setSkillCount(skillCount);
         if (completedCount) setCompletedCount(completedCount);
+        const [skills, evaluations, error2] = await getCompositionEvaluations(compositionId, userId);
+        if (error2) handleError(error2);
+        if (skills) setSkills(skills);
+        if (evaluations) setEvaluations(evaluations);
+        if (composition?.evaluationModel) {
+            const [evaluationModel, error3] = await getEvaluationModel(composition.evaluationModel);
+            if (error3) handleError(error3);
+            if (evaluationModel) setEvaluationModel(evaluationModel);
+        }
+        setIsLoading(false);
     }
 
     useEffect(() => {
@@ -103,28 +131,40 @@ function CompositionDetails({ compositionId, userId, expanded, handleChange }: {
     }, []);
 
     return (
-        <Accordion expanded={expanded === compositionId} onChange={handleChange(compositionId)} key={compositionId}>
+        <Accordion expanded={expanded === compositionId} onChange={handleChange(compositionId)} key={compositionId} sx={{ width: "500px" }}>
             <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls="panel1bh-content"
                 id={"panel1bh-header-" + compositionId}
             >
-                <Typography sx={{ width: '50%', flexShrink: 0 }}>
+                <Typography sx={{ width: '70%', flexShrink: 0 }}>
                     {composition?.title}
                 </Typography>
-                <Typography sx={{ color: 'text.secondary' }}>Completed {completedCount} / {skillCount}</Typography>
+                <Typography sx={{ width: '15%', flexShrink: 0 }}>{evaluationModel && calculateSkilltreeGrade(evaluations, skills, evaluationModel)}</Typography>
+                <CircularProgressWithLabel value={Math.round(completedCount / skillCount * 100)} />
             </AccordionSummary>
             <AccordionDetails>
-                {expanded === compositionId && composition ? <CompositionResults composition={composition} userId={userId} /> : <Typography>
-                    Loading...
-                </Typography>}
+                {expanded === compositionId && composition && !isLoading ?
+                    <CompositionResults composition={composition} skills={skills} evaluations={evaluations} evaluationModel={evaluationModel} /> : <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <CircularProgress />
+                    </div>}
             </AccordionDetails>
         </Accordion>
 
     )
 }
 
-function CompositionResults({ composition, userId }: { composition: IComposition, userId: string }) {
+function CompositionResults({
+    composition,
+    skills,
+    evaluations,
+    evaluationModel
+}: {
+    composition: IComposition,
+    skills: ISkill[],
+    evaluations: IEvaluation[],
+    evaluationModel: IEvaluationModel | null
+}) {
     const snackbarController = useSnackbarController();
     const [isLoading, setIsLoading] = useState(true);
     const [expanded, setExpanded] = useState<string[]>([]);
@@ -147,22 +187,19 @@ function CompositionResults({ composition, userId }: { composition: IComposition
         );
     };
 
-    const [skills, setSkills] = useState<ISkill[]>([]);
     const [transformedSkills, setTransformedSkills] = useState<ISkill[]>([]);
-    const [evaluations, setEvaluations] = useState<IEvaluation[]>([]);
     const [skilltrees, setSkilltrees] = useState<ISkilltree[]>([]);
 
     const initialize = async () => {
-        const [skills, evaluations, error] = await getCompositionEvaluations(composition.id || "", userId);
+
         const [skilltrees, error2] = await getCompositionSkilltrees(composition.id || "");
-        if (error) return handleError(error);
+
         if (error2) return handleError(error2);
-        if (skills) setSkills(skills);
+
         const transformedSkills = skillArrayToSkillTree(
             skills
         );
         if (transformedSkills) setTransformedSkills(transformedSkills);
-        if (evaluations) setEvaluations(evaluations);
         if (skilltrees) setSkilltrees(skilltrees);
         setIsLoading(false);
     }
@@ -170,14 +207,6 @@ function CompositionResults({ composition, userId }: { composition: IComposition
     useEffect(() => {
         initialize();
     }, []);
-
-    const renderTree = (nodes: ISkill) => (
-        <TreeItem key={nodes.id} nodeId={nodes.id || ""} label={nodes.title}>
-            {Array.isArray(nodes.children)
-                ? nodes.children.map((node: any) => renderTree(node))
-                : null}
-        </TreeItem>
-    );
 
     return (
         isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -197,11 +226,57 @@ function CompositionResults({ composition, userId }: { composition: IComposition
                     onNodeToggle={handleToggle}
                 >
                     {skilltrees.map(skilltree => (
-                        <TreeItem nodeId={skilltree.id || ''} label={skilltree.title} >
-                            {transformedSkills.filter(s => s.skilltree === skilltree.id).map(s => renderTree(s))}
+                        <TreeItem nodeId={skilltree.id || ''} label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, pr: 0 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 'inherit', flexGrow: 1 }}>
+                                    {skilltree.title}
+                                </Typography>
+                                <Typography variant="caption" color="inherit">
+                                    {evaluationModel && calculateSkilltreeGrade(evaluations.filter(e => e.skilltree.id === skilltree.id), skills, evaluationModel)}
+                                </Typography>
+                            </Box>
+                        } key={skilltree.id || ""}>
+                            {transformedSkills.filter(s => s.skilltree === skilltree.id).map(skill =>
+                                <RecursiveTreeItem key={skill.id} skill={skill} composition={composition} evaluations={evaluations} evaluationModel={evaluationModel} />)}
                         </TreeItem>
                     ))}
                 </TreeView>
             </Box>
     )
 }
+
+
+function RecursiveTreeItem({
+    composition,
+    skill,
+    evaluations,
+
+    evaluationModel
+}: {
+    composition: IComposition,
+    skill: ISkill,
+    evaluations: IEvaluation[],
+    evaluationModel: IEvaluationModel | null
+}) {
+
+    const evaluation = evaluations.find(e => e.skill.id === skill.id);
+
+    return (
+        <TreeItem nodeId={skill.id || ""} label={
+            <Box sx={{ display: 'flex', alignItems: 'center', p: 0.5, pr: 0 }}>
+                <Typography variant="body2" color={isGradedSkill(composition, skill) ? "CaptionText" : "InactiveCaptionText"} sx={{ fontWeight: 'inherit', flexGrow: 1 }}>
+                    {skill.title}
+                </Typography>
+                <Typography variant="caption" color="inherit">
+                    {isGradedSkill(composition, skill) && evaluation && <EvaluationResultViewer evaluation={evaluation} evaluationModel={evaluationModel} viewAsChip={false} />}
+                    {isGradedSkill(composition, skill) && !evaluation && "-"}
+                </Typography>
+            </Box>
+        }>
+            {Array.isArray(skill.children)
+                ? skill.children.map((node: ISkill) =>
+                    <RecursiveTreeItem key={node.id} skill={node} composition={composition} evaluations={evaluations} evaluationModel={evaluationModel} />)
+                : null}
+        </TreeItem>
+    );
+};

@@ -1,3 +1,19 @@
+type LetterOption = {
+    letter: string;
+    description: string;
+    color: string;
+    value: number;
+    minimum: number;
+    maximum: number;
+    valuePasses: boolean;
+}
+
+type RepeatOption = {
+    letter: string;
+    description: string;
+    color: string;
+}
+
 export type IEvaluationModel = {
     id?: string;
     name: string;
@@ -5,8 +21,8 @@ export type IEvaluationModel = {
     minimum?: number;
     maximum?: number;
     passLevel?: number;
-    options?: any[];
-    repeatOption?: any;
+    options?: LetterOption[];
+    repeatOption?: RepeatOption;
     createdAt?: Date;
     updatedAt?: Date;
 }

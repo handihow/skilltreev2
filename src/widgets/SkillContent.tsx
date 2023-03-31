@@ -8,11 +8,10 @@ import { useAuthController, useSideEntityController, useSnackbarController } fro
 import { buildEvaluationsCollection } from '../collections/evaluation_collection';
 import { skillsCollection } from '../collections/skill_collection';
 import { deleteFromPathRecursively } from '../services/firestore';
-import { IEvaluation } from '../types/ievaluation.type';
-import { InfoChip } from '../types/infoChip.type';
 import { CHIP_COLORS } from '../common/StandardData';
 import { buildEventsCollection } from '../collections/event_collection';
-import { convertToDateTimeString } from '../common/StandardFunctions';
+import { convertToDateTimeString, isGradedSkill } from '../common/StandardFunctions';
+import { EvaluationResultViewer } from './EvaluationResultViewer';
 
 export default function SkillContent(props: {
     id: string;
@@ -44,60 +43,9 @@ export default function SkillContent(props: {
     const eventColor = CHIP_COLORS[colorOfEvent].color;
     const eventText = CHIP_COLORS[colorOfEvent].text;
     const eventDate = event ? event.start.toDate(): new Date();
+    const evaluation = content.evaluations.find(e => e.skill.id === props.id);
 
-    let isGraded = false;
-    let evaluation: IEvaluation | undefined = undefined;
-
-    let gradeChip: InfoChip = {
-        hasGrade: false,
-        label: "",
-        color: undefined,
-        bgColor: undefined
-    }
-
-    if (skill?.gradeSkill === "graded" || (content.composition?.gradeAllSkillsByDefault && skill?.gradeSkill !== "not_graded")) {
-        isGraded = true;
-        evaluation = content.evaluations.find(e => e.skill.id == skill?.id);
-        if (evaluation) {
-            gradeChip.hasGrade = true;
-            switch (evaluation.type) {
-
-                case "percentage":
-                    if (content.evaluationModel?.passLevel && evaluation.percentage && content.evaluationModel.passLevel > evaluation.percentage) {
-                        gradeChip.bgColor = CHIP_COLORS["redLight"].color;
-                        gradeChip.color = CHIP_COLORS["redLight"].text;
-                    } else {
-                        gradeChip.bgColor = CHIP_COLORS["greenDark"].color;
-                        gradeChip.color = CHIP_COLORS["greenDark"].text;
-                    };
-                    gradeChip.label = "Graded " + evaluation.percentage + " %";
-                    break;
-                case "numerical":
-                    if (content.evaluationModel?.passLevel && evaluation.grade && content.evaluationModel.passLevel >= evaluation.grade) {
-                        gradeChip.bgColor = CHIP_COLORS["redLight"].color;
-                        gradeChip.color = CHIP_COLORS["redLight"].text;
-                    } else {
-                        gradeChip.bgColor = CHIP_COLORS["greenDark"].color;
-                        gradeChip.color = CHIP_COLORS["greenDark"].text;
-                    };
-                    gradeChip.label = "Graded " + evaluation.grade;
-                    break;
-                case "letter":
-                    const option = content.evaluationModel?.options?.find(o => o.letter === evaluation?.letter);
-                    gradeChip.bgColor = CHIP_COLORS[option.color].color;
-                    gradeChip.color = CHIP_COLORS[option.color].text;
-                    gradeChip.label = option.description;
-                    break;
-                default:
-                    break;
-            }
-            if(evaluation.repeat) {
-                gradeChip.label = "Repeat";
-                gradeChip.bgColor = CHIP_COLORS["grayLighter"].color;
-                gradeChip.color = CHIP_COLORS["grayLighter"].text;
-            }
-        }
-    };
+    // const [isGraded,evaluation, gradeChip] = processGradeChip(content.composition, skill, content.evaluations, content.evaluationModel);
 
     const openSkillController = (mode: "edit" | "child" | "sibling" | "grade" | "feedback" | "todo") => {
         const pathAsArray = skill?.path?.split("/");
@@ -168,7 +116,7 @@ export default function SkillContent(props: {
     return (
         <React.Fragment>
             {props.optional && <Chip label="optional" variant="filled" color="primary" sx={{ marginBottom: 3 }} />}
-            {gradeChip.hasGrade && <Chip label={gradeChip.label} variant="filled" sx={{ backgroundColor: gradeChip.bgColor, color: gradeChip.color, marginBottom: 3 }} />}
+            {isGradedSkill(content.composition, skill) && <EvaluationResultViewer evaluation={evaluation} evaluationModel={content.evaluationModel} viewAsChip={true} / >}
             {canSchedule && event && <Chip label={"Due " + convertToDateTimeString(eventDate)} variant="filled" sx={{ backgroundColor: eventColor, color: eventText, marginBottom: 3 }}/>}
             <div
                 dangerouslySetInnerHTML={{ __html: props.description }}
@@ -208,7 +156,7 @@ export default function SkillContent(props: {
             }
             {content.mode === "teacher" &&
                 <ButtonGroup variant="contained" size="small" aria-label="contained small button group">
-                    {isGraded && <Button aria-label="grade" onClick={gradeSkill} color="primary">
+                    {isGradedSkill(content.composition, skill) && <Button aria-label="grade" onClick={gradeSkill} color="primary">
                         +grade
                     </Button>}
                     {canSchedule && <Button aria-label="feedback" onClick={() => openSkillController("todo")} color="success">
