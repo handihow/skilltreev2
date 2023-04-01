@@ -248,7 +248,7 @@ export function SkillTreeViewer() {
                                                     alertWarning="Are you sure that you want to reset the completion status of all skills?"
                                                     btnColor="error"
                                                 />}
-                                                <Button aria-label="delete" size="small" onClick={() => navigate(-1)}>
+                                                <Button aria-label="delete" size="small" onClick={() => isAdmin ? navigate("/own-skilltrees") : navigate("/shared-skilltrees")}>
                                                     Back
                                                 </Button>
                                                 {isAdmin  && selectedUser && <Button onClick={openUserRecord}>User record</Button>}

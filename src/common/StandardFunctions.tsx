@@ -222,10 +222,12 @@ export const isGradedSkill = (composition: IComposition | null, skill: ISkill | 
 
 // }
 
-export const calculateSkilltreeGrade = (evaluations: IEvaluation[], skills: ISkill[], evaluationModel: IEvaluationModel) => {
+export const calculateAverageGrade = (evaluations: IEvaluation[], skills: ISkill[], evaluationModel: IEvaluationModel) => {
 
-    let result = "";
-    if (!evaluations || evaluations.length === 0) return result;
+    let returnedEvaluation: IEvaluation = {
+        type: evaluationModel.type
+    };
+    if (!evaluations || evaluations.length === 0) return returnedEvaluation;
 
     let nums: number[] = [];
     let weights: number[] = [];
@@ -254,14 +256,22 @@ export const calculateSkilltreeGrade = (evaluations: IEvaluation[], skills: ISki
         }
     }
     const average = weightedAverage(nums, weights);
-    if (evaluationModel.type === "letter") {
-        const option = evaluationModel?.options?.find(o => average >= o.minimum && average <= o.maximum);
-        if (option) result = option.letter;
-    } else {
-        result = average.toFixed(1).toString();
+    switch (evaluationModel.type) {
+        case "letter":
+            const option = evaluationModel?.options?.find(o => average >= o.minimum && average <= o.maximum);
+            if (option) returnedEvaluation.letter = option.letter;
+            break;
+        case "percentage":
+            returnedEvaluation.percentage = average;
+            break;
+        case "numerical":
+            returnedEvaluation.grade = average;
+            break;
+        default:
+            break;
     }
 
-    return result;
+    return returnedEvaluation;
 }
 
 const weightedAverage = (nums: number[], weights: number[]) => {

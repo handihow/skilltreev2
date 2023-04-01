@@ -33,7 +33,6 @@ export function EvaluationResultViewer({
                     gradeChip.bgColor = CHIP_COLORS["greenDark"].color;
                     gradeChip.color = CHIP_COLORS["greenDark"].text;
                 };
-                if (viewAsChip) gradeChip.label += "Graded ";
                 gradeChip.label += evaluation?.percentage?.toString() + " %";
                 break;
             case "numerical":
@@ -44,7 +43,6 @@ export function EvaluationResultViewer({
                     gradeChip.bgColor = CHIP_COLORS["greenDark"].color;
                     gradeChip.color = CHIP_COLORS["greenDark"].text;
                 };
-                if (viewAsChip) gradeChip.label += "Graded";
                 gradeChip.label += evaluation?.grade?.toString() || "";
                 break;
             case "letter":
@@ -61,8 +59,10 @@ export function EvaluationResultViewer({
         }
     }
 
-    return (viewAsChip ?
-        <Chip label={gradeChip.label} variant="filled" sx={{ backgroundColor: gradeChip.bgColor, color: gradeChip.color, marginBottom: 3 }} /> :
-        <Typography variant="caption" color="inherit" sx={{ backgroundColor: gradeChip.bgColor, color: gradeChip.color, borderRadius: "25px", padding: "0 15px" }}>{gradeChip.label}</Typography>
+    return (
+        gradeChip.label ? 
+        viewAsChip ?
+        <Chip label={gradeChip.label} variant="filled" size="small" sx={{ backgroundColor: gradeChip.bgColor, color: gradeChip.color, marginBottom: 3 }} /> :
+        <Typography variant="caption" sx={{ backgroundColor: gradeChip.bgColor, color: gradeChip.color, borderRadius: "25px", padding: "3px 15px" }}>{gradeChip.label}</Typography> : <div></div>
     );
 }

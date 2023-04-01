@@ -1,7 +1,7 @@
 
 export type IEvaluation = {
     id?: string;
-    type: string;
+    type: "letter" | "numerical" | "percentage";
     grade?: number;
     percentage?: number;
     letter?: string;

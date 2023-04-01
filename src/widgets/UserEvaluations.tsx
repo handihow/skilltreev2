@@ -1,6 +1,6 @@
 // import React from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, Typography } from "@mui/material";
-import { useAuthController, useSnackbarController } from "firecms";
+import { useSnackbarController } from "firecms";
 import { SyntheticEvent, useEffect, useState } from "react";
 import { getUserResults } from "../services/user.service";
 import { IResult } from "../types/iresult.type";
@@ -13,7 +13,7 @@ import { getCompositionEvaluations, getEvaluationModel } from "../services/evalu
 import { ISkilltree } from "../types/iskilltree.type";
 import { TreeView, TreeItem } from "@mui/lab";
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { calculateSkilltreeGrade, isGradedSkill, skillArrayToSkillTree } from "../common/StandardFunctions";
+import { calculateAverageGrade, isGradedSkill, skillArrayToSkillTree } from "../common/StandardFunctions";
 import { IEvaluationModel } from "../types/ievaluation.model.type";
 import { CircularProgressWithLabel } from "./ProgressWithLabel";
 import { EvaluationResultViewer } from "./EvaluationResultViewer";
@@ -131,16 +131,20 @@ function CompositionDetails({ compositionId, userId, expanded, handleChange }: {
     }, []);
 
     return (
-        <Accordion expanded={expanded === compositionId} onChange={handleChange(compositionId)} key={compositionId} sx={{ width: "500px" }}>
+        <Accordion expanded={expanded === compositionId} onChange={handleChange(compositionId)} key={compositionId}>
             <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls="panel1bh-content"
                 id={"panel1bh-header-" + compositionId}
             >
-                <Typography sx={{ width: '70%', flexShrink: 0 }}>
+                <Typography sx={{ width: '55%', flexShrink: 0 }}>
                     {composition?.title}
                 </Typography>
-                <Typography sx={{ width: '15%', flexShrink: 0 }}>{evaluationModel && calculateSkilltreeGrade(evaluations, skills, evaluationModel)}</Typography>
+                <Typography sx={{ width: '30%' }}>{evaluationModel && <EvaluationResultViewer
+                    evaluation={calculateAverageGrade(evaluations, skills, evaluationModel)}
+                    evaluationModel={evaluationModel}
+                    viewAsChip={true} />}</Typography>
+
                 <CircularProgressWithLabel value={Math.round(completedCount / skillCount * 100)} />
             </AccordionSummary>
             <AccordionDetails>
@@ -232,7 +236,11 @@ function CompositionResults({
                                     {skilltree.title}
                                 </Typography>
                                 <Typography variant="caption" color="inherit">
-                                    {evaluationModel && calculateSkilltreeGrade(evaluations.filter(e => e.skilltree.id === skilltree.id), skills, evaluationModel)}
+                                    {evaluationModel &&
+                                        <EvaluationResultViewer
+                                            evaluation={calculateAverageGrade(evaluations.filter(e => e.skilltree.id === skilltree.id), skills, evaluationModel)}
+                                            evaluationModel={evaluationModel}
+                                            viewAsChip={false} />}
                                 </Typography>
                             </Box>
                         } key={skilltree.id || ""}>
