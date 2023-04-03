@@ -59,11 +59,6 @@ export function UserEvaluations({ userId, compositionId }: {
             width={"100%"}
             height={"100%"}>
 
-            <Box m="auto"
-                display="flex"
-                flexDirection={"column"}
-                alignItems={"center"}
-                justifyItems={"center"}>
 
                 <Box p={1}>
                     {isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -81,7 +76,6 @@ export function UserEvaluations({ userId, compositionId }: {
                         </div>
                     }
                 </Box>
-            </Box>
         </Box>
     );
 
@@ -109,18 +103,18 @@ function CompositionDetails({ compositionId, userId, expanded, handleChange }: {
 
     const initialize = async () => {
         const [composition, error] = await getComposition(compositionId);
-        if (error) handleError(error);
+        if (error) return setIsLoading(false);
         if (composition) setComposition(composition);
         const [skillCount, completedCount] = await getCompositionSkillCount(compositionId, userId);
         if (skillCount) setSkillCount(skillCount);
         if (completedCount) setCompletedCount(completedCount);
         const [skills, evaluations, error2] = await getCompositionEvaluations(compositionId, userId);
-        if (error2) handleError(error2);
+        if (error2) return handleError(error2);
         if (skills) setSkills(skills);
         if (evaluations) setEvaluations(evaluations);
         if (composition?.evaluationModel) {
             const [evaluationModel, error3] = await getEvaluationModel(composition.evaluationModel);
-            if (error3) handleError(error3);
+            if (error3) return handleError(error3);
             if (evaluationModel) setEvaluationModel(evaluationModel);
         }
         setIsLoading(false);
@@ -131,6 +125,7 @@ function CompositionDetails({ compositionId, userId, expanded, handleChange }: {
     }, []);
 
     return (
+        composition && !isLoading ?
         <Accordion expanded={expanded === compositionId} onChange={handleChange(compositionId)} key={compositionId}>
             <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -140,20 +135,22 @@ function CompositionDetails({ compositionId, userId, expanded, handleChange }: {
                 <Typography sx={{ width: '55%', flexShrink: 0 }}>
                     {composition?.title}
                 </Typography>
-                <Typography sx={{ width: '30%' }}>{evaluationModel && <EvaluationResultViewer
+                <Box sx={{ width: '30%' }}>{evaluationModel && <EvaluationResultViewer
                     evaluation={calculateAverageGrade(evaluations, skills, evaluationModel)}
                     evaluationModel={evaluationModel}
-                    viewAsChip={true} />}</Typography>
+                    viewAsChip={true} />}</Box>
 
                 <CircularProgressWithLabel value={Math.round(completedCount / skillCount * 100)} />
             </AccordionSummary>
             <AccordionDetails>
-                {expanded === compositionId && composition && !isLoading ?
+                {expanded === compositionId ?
                     <CompositionResults composition={composition} skills={skills} evaluations={evaluations} evaluationModel={evaluationModel} /> : <div style={{ display: 'flex', justifyContent: 'center' }}>
                         <CircularProgress />
                     </div>}
             </AccordionDetails>
-        </Accordion>
+        </Accordion> : isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <CircularProgress />
+                    </div> : <div></div>
 
     )
 }

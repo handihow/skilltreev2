@@ -35,6 +35,7 @@ import { buildEvaluationsCollection } from "./collections/evaluation_collection"
 import { buildEventsCollection } from "./collections/event_collection";
 import { ShareSkillTreeView } from "./custom_views/ShareSkillTree";
 import { MySchedule } from "./custom_views/MySchedule";
+import { MyGrades } from "./custom_views/MyGrades";
 library.add(fas)
 library.add(fab)
 
@@ -155,6 +156,21 @@ export default function App() {
             setCollections([
                 evaluationModelCollection,
             ])
+        } 
+        if(roles && roles.includes("student")){
+            console.log(
+                 'adding grades view'
+            )
+            customViews.push(
+                {
+                    path: "my-grades",
+                    name: "My Grades",
+                    group: "Grades",
+                    description: "Your grades",
+                    view: <MyGrades />,
+                    icon: "Grading"
+                },
+            )
         }
         return true;
     }, []);
@@ -165,7 +181,7 @@ export default function App() {
         views={customViews}
         collections={collections} 
         firebaseConfig={firebaseConfig}
-        signInOptions={['google.com', 'microsoft.com', 'password']}
+        signInOptions={['google.com', 'microsoft.com', 'password', 'anomymous']}
         toolbarExtraWidget={githubLink}
         logo="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTreeIcon.png?alt=media&token=af824f13-6bfd-46f9-9ec8-35ff020e95c6"
         logoDark="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTree_T_icon.png?alt=media&token=06b80792-f01a-4cfc-9de4-0f89f6d1b3c0"
