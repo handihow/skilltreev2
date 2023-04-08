@@ -54,10 +54,6 @@ export function UserEvaluations({ userId, compositionId }: {
     }, []);
 
     return (
-        <Box
-            display="flex"
-            width={"100%"}
-            height={"100%"}>
 
 
                 <Box p={1}>
@@ -76,7 +72,6 @@ export function UserEvaluations({ userId, compositionId }: {
                         </div>
                     }
                 </Box>
-        </Box>
     );
 
 }
@@ -132,10 +127,10 @@ function CompositionDetails({ compositionId, userId, expanded, handleChange }: {
                 aria-controls="panel1bh-content"
                 id={"panel1bh-header-" + compositionId}
             >
-                <Typography sx={{ width: '55%', flexShrink: 0 }}>
+                <Typography sx={{ width: '65%', flexShrink: 0 }}>
                     {composition?.title}
                 </Typography>
-                <Box sx={{ width: '30%' }}>{evaluationModel && <EvaluationResultViewer
+                <Box sx={{ width: '25%' }}>{evaluationModel && <EvaluationResultViewer
                     evaluation={calculateAverageGrade(evaluations, skills, evaluationModel)}
                     evaluationModel={evaluationModel}
                     viewAsChip={true} />}</Box>
@@ -213,7 +208,7 @@ function CompositionResults({
         isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />
         </div> :
-            <Box sx={{ height: 270, flexGrow: 1, maxWidth: 400, overflowY: 'auto' }} key={composition.id}>
+            <Box sx={{ height: 270, flexGrow: 1, overflowY: 'auto' }} key={composition.id}>
                 <Box sx={{ mb: 1 }}>
                     <Button onClick={handleExpandClick}>
                         {expanded.length === 0 ? 'Expand all' : 'Collapse all'}

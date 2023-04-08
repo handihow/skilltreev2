@@ -22,10 +22,7 @@ export function buildCommentsCollection(
       values,
       status
     }) => {
-      console.log("I am running")
-      console.log(status, "status")
       if (status === "new") {
-        console.log("I got inside the block")
         if (!skillId || !studentId || !teacherId || !compositionId || !skilltreeId) throw new Error('Missing necessary information');
         const [path, error] = await getSkillPath(skillId);
         if (error || !path) throw new Error("Missing path info: " + error);

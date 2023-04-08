@@ -15,6 +15,7 @@ import {
 
 import {
     useAuthController,
+    useModeController,
     useSideEntityController,
     useSnackbarController,
 } from "firecms";
@@ -42,6 +43,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
     // hook to display custom snackbars
     const snackbarController = useSnackbarController();
     const navigate = useNavigate();
+    const modeController = useModeController();
 
     const navigateToSkillTree = (id: string, view: "viewer" | "editor" | "share") => {
         navigate("/compositions/" + id + '/' + view);
@@ -198,7 +200,7 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                         </Typography>
                                     </CardContent>
                                     <CardActions>
-                                        <Button onClick={view === "owned" ? add : addShared} color="primary">
+                                        <Button onClick={view === "owned" ? add : addShared} color={modeController.mode === "dark" ? "secondary" : "primary"}>
                                             Add
                                         </Button>
                                     </CardActions>

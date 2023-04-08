@@ -15,8 +15,8 @@ import "@fontsource/ibm-plex-mono";
 
 import { getUserOrganization, getUserRoles, updateUser } from "./services/user.service";
 
-import { buildUsersCollection } from "./collections/user_collection";
-import { buildCompositionsCollection } from "./collections/composition_collection";
+import { buildUsersCollection } from "./collections/user/user_collection";
+import { buildAdminCompositionsCollection } from "./collections/composition/composition_collection";
 import { organizationCollection } from "./collections/organization_collection";
 import { firebaseConfig } from "./firebase_config";
 import { buildShareRequestCollection } from "./collections/share_request_collection";
@@ -30,12 +30,13 @@ import { GitHub } from "@mui/icons-material";
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { fab } from '@fortawesome/free-brands-svg-icons'
-import { evaluationModelCollection } from "./collections/evaluation_model_collection";
+import { buildEvaluationModelCollection } from "./collections/evaluation_model_collection";
 import { buildEvaluationsCollection } from "./collections/evaluation_collection";
 import { buildEventsCollection } from "./collections/event_collection";
 import { ShareSkillTreeView } from "./custom_views/ShareSkillTree";
 import { MySchedule } from "./custom_views/MySchedule";
 import { MyGrades } from "./custom_views/MyGrades";
+import { MyAccount } from "./custom_views/MyAccount";
 library.add(fas)
 library.add(fab)
 
@@ -63,6 +64,14 @@ const customViews: CMSView[] = [
         description: "Your schedule",
         view: <MySchedule />,
         icon: "Today"
+    },
+    {
+        path: "my-account",
+        name: "My Account",
+        group: "Account",
+        description: "Your account",
+        view: <MyAccount />,
+        icon: "AccountCircle"
     },
     {
         path: "compositions/:id/viewer",
@@ -135,32 +144,32 @@ export default function App() {
         // if(error1) throw Error(error1)
         const [organization, error2] = await getUserOrganization(user?.uid || "")
         if(error2) throw Error(error2)
-        authController.setExtra({roles, organization});
+        const providerIds = user?.providerData.map(provider => provider.providerId);
+        authController.setExtra({roles, organization, providerIds});
         if(roles && roles.includes("super") && user) {
             setCollections([
-                buildCompositionsCollection(false), 
+                buildAdminCompositionsCollection(), 
                 buildUsersCollection("admin"), 
                 buildShareRequestCollection("admin", user),
-                evaluationModelCollection, 
+                buildEvaluationModelCollection(true), 
                 buildEvaluationsCollection("evaluations"),
                 buildEventsCollection("table"),
                 organizationCollection,
             ])
         } else if(roles && roles.includes("admin") && organization){
             setCollections([
-                buildCompositionsCollection(false, organization), 
+                buildAdminCompositionsCollection(organization), 
                 buildUsersCollection("admin", organization), 
-                evaluationModelCollection,
+                buildEvaluationModelCollection(true),
             ])
         } else if(roles && roles.includes("admin")){
             setCollections([
-                evaluationModelCollection,
+                buildEvaluationModelCollection(true),
             ])
-        } 
+        } else {
+            setCollections([buildEvaluationModelCollection(false)])
+        }
         if(roles && roles.includes("student")){
-            console.log(
-                 'adding grades view'
-            )
             customViews.push(
                 {
                     path: "my-grades",
@@ -181,12 +190,12 @@ export default function App() {
         views={customViews}
         collections={collections} 
         firebaseConfig={firebaseConfig}
-        signInOptions={['google.com', 'microsoft.com', 'password', 'anomymous']}
+        signInOptions={['google.com', 'microsoft.com', 'password', 'anonymous']}
         toolbarExtraWidget={githubLink}
         logo="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTreeIcon.png?alt=media&token=af824f13-6bfd-46f9-9ec8-35ff020e95c6"
         logoDark="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTree_T_icon.png?alt=media&token=06b80792-f01a-4cfc-9de4-0f89f6d1b3c0"
         primaryColor="#27405f"
-        secondaryColor="#8a4d76"
+        secondaryColor="#fffff"
         fontFamily="Nunito"
     />;
 }

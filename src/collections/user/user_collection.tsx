@@ -1,46 +1,10 @@
 import {
-    buildCollection, buildEntityCallbacks, EntityCollection, EntityReference,
+    buildCollection, EntityCollection, EntityReference,
 } from "firecms";
-import { IUser } from "../types/iuser.type";
-import { UserSchedulerView } from "../custom_entity_view/scheduler";
-import { UserEvaluationsView } from "../custom_entity_view/userEvals";
-
-const roleCallbacks = buildEntityCallbacks({
-    onPreSave: ({
-        entityId,
-        values,
-        status,
-        context
-    }) => {
-        const canAssignAdminRole = context.authController.extra?.roles.includes("admin");
-        if (status === "new" && entityId === "admin" && !canAssignAdminRole)
-            throw Error("Only admins can assign the admin role. Please contact support if you require admin rights.");
-        return values;
-    }
-});
-
-const roles = {
-    "student": "Student",
-    "instructor": "Instructor",
-    "admin": "Admin",
-};
-
-
-const rolesCollection = buildCollection({
-    path: "roles",
-    customId: roles,
-    name: "Roles",
-    singularName: "Role",
-    properties: {
-        hasRole: {
-            name: "Has role",
-            description: "User has this role",
-            dataType: "boolean"
-        }
-    },
-    callbacks: roleCallbacks
-});
-
+import { IUser } from "../../types/iuser.type";
+import { UserSchedulerView } from "../../custom_entity_view/scheduler";
+import { UserEvaluationsView } from "../../custom_entity_view/userEvals";
+import { rolesCollection } from "./role_collection";
 
 export function buildUsersCollection(view: "admin" | "teacher" | "record", organization?: string, compositionId?: string): EntityCollection<IUser> {
 
@@ -51,16 +15,19 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
         path: "users",
         group: "Administration",
         defaultSize: "s",
+        alias: compositionId ? compositionId : undefined,
         subcollections: view === "admin" ? [
             rolesCollection
         ] : [],
-        icon: "AccountCircle",
+        icon: "Group",
         inlineEditing: false,
+        hideIdFromCollection: view === "admin" && !organization,
+        hideIdFromForm: view === "admin" && !organization,
         permissions: ({ authController }) => ({
             edit: view !== "teacher",
-            create: false,
+            create: authController.extra?.roles.includes("admin") || authController.extra?.roles.includes("super"),
             // we have created the roles object in the navigation builder
-            delete: false
+            delete: authController.extra?.roles.includes("super")
         }),
         views: [
             {
@@ -92,10 +59,6 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
                 dataType: "boolean",
                 readOnly: true
             },
-            // hostedDomain: {
-            //     name: "Domain",
-            //     dataType: "string"
-            // },
             provider: {
                 name: "Provider",
                 dataType: "string",
@@ -111,10 +74,6 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
                 dataType: "string",
                 readOnly: true
             },
-            // type: {
-            //     name: "Type",
-            //     dataType: "string"
-            // },
             organizations: {
                 name: "Organizations",
                 dataType: "array",
@@ -123,17 +82,7 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
                     path: "organizations",
                     previewProperties: ["name"]
                 }
-            },
-            // subjects: {
-            //     dataType: "array",
-            //     name: "Subjects",
-            //     of: {
-            //         dataType: "string",
-            //         previewAsTag: true
-            //     },
-            //     expanded: true
-            // }
+            }
         },
-        // callbacks: userCallbacks
     })
 };

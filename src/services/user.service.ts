@@ -10,7 +10,7 @@ import {
     setDoc,
     where,
 } from "firebase/firestore";
-import { User } from "firebase/auth";
+import { User, GoogleAuthProvider, OAuthProvider, linkWithPopup, unlink, getAuth } from "firebase/auth";
 import { db } from "./firestore";
 import { SavedDataType } from "beautiful-skill-tree";
 import { AutocompleteOption } from "../types/autoCompleteOption.type";
@@ -18,6 +18,28 @@ import { EntityStatus } from "firecms";
 import { IUser } from "../types/iuser.type";
 import { IComposition } from "../types/icomposition.type";
 import { IResult } from "../types/iresult.type";
+
+export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: boolean) : Promise<string | undefined> => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    let provider;
+    if (authProvider === 'Google') {
+        provider = new GoogleAuthProvider();
+    } else if (authProvider === 'Microsoft') {
+        provider = new OAuthProvider('microsoft.com');
+    }
+    if (!provider || !user) return;
+    try {
+        if(link) {
+            await linkWithPopup(user, provider);
+        } else {
+            await unlink(user, provider.providerId)
+        }
+        return;
+    } catch(err: any) {
+        return err.message;
+    }
+}
 
 export const getUserRoles = async (userId: string): Promise<[string[] | null, string | null]> => {
     const userRolesRef = collection(db, 'users/' + userId + '/roles')
@@ -210,10 +232,10 @@ export const getUserResults = async (userId: string): Promise<[IResult | null, s
     const docRef = doc(db, 'results', userId);
     try {
         const snap = await getDoc(docRef);
-        if(!snap.exists) return [null, "No result record found"];
-        const result = {id: snap.id, ...snap.data()} as IResult;
+        if (!snap.exists) return [null, "No result record found"];
+        const result = { id: snap.id, ...snap.data() } as IResult;
         return [result, null];
-    } catch(err: any) {
+    } catch (err: any) {
         return [null, err.message as string];
     }
 }

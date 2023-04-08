@@ -17,7 +17,7 @@ import {
     Typography,
 } from "@mui/material";
 import {
-    useAuthController, useSideEntityController, useSnackbarController, useStorageSource,
+    useAuthController, useModeController, useSideEntityController, useSnackbarController, useStorageSource,
 } from "firecms";
 import { useNavigate, useParams } from "react-router";
 import { AutocompleteOption } from "../types/autoCompleteOption.type";
@@ -34,7 +34,7 @@ import { collection, onSnapshot, query, Unsubscribe, where } from "firebase/fire
 import { createDocRef, db } from "../services/firestore";
 import { IEvaluation } from "../types/ievaluation.type";
 import { IEvent } from "../types/ievent.type";
-import { buildUsersCollection } from "../collections/user_collection";
+import { buildUsersCollection } from "../collections/user/user_collection";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars
@@ -43,6 +43,7 @@ export function SkillTreeViewer() {
     // hook to do operations related to authentication
     const authController = useAuthController();
     const storageSource = useStorageSource();
+    const modeController = useModeController();
     const sideEntityController = useSideEntityController();
 
     const initialList: ISkilltree[] = []
@@ -248,12 +249,15 @@ export function SkillTreeViewer() {
                                                     alertWarning="Are you sure that you want to reset the completion status of all skills?"
                                                     btnColor="error"
                                                 />}
-                                                <Button aria-label="delete" size="small" onClick={() => isAdmin ? navigate("/own-skilltrees") : navigate("/shared-skilltrees")}>
+                                                <Button color={modeController.mode === "dark" ? "secondary" : "primary"}
+                                                    aria-label="delete" size="small" onClick={() => isAdmin ? navigate("/own-skilltrees") : navigate("/shared-skilltrees")}>
                                                     Back
                                                 </Button>
-                                                {isAdmin  && selectedUser && <Button onClick={openUserRecord}>User record</Button>}
+                                                {isAdmin && selectedUser && <Button color={modeController.mode === "dark" ? "secondary" : "primary"}
+                                                    onClick={openUserRecord}>User record</Button>}
                                                 {composition?.pendingApprovalUsers?.length && composition.pendingApprovalUsers.length > 0 ?
-                                                    <Button onClick={() => navigate("/share_requests/" + id)}>Approvals</Button> : <React.Fragment></React.Fragment>}
+                                                    <Button color={modeController.mode === "dark" ? "secondary" : "primary"}
+                                                        onClick={() => navigate("/share_requests/" + id)}>Approvals</Button> : <React.Fragment></React.Fragment>}
                                             </CardActions>
                                         </Card>
                                         {skilltreesList.map((skilltree) => (

@@ -9,6 +9,8 @@ export const organizationCollection = buildCollection<IOrganization>({
     group: "Administration",
     icon: "CorporateFare",
     defaultSize: "s",
+    hideIdFromCollection: true,
+    hideIdFromForm: true,
     permissions: ({ authController }) => ({
         edit: authController.extra?.roles.includes("admin"),
         create: authController.extra?.roles.includes("admin"),
@@ -55,13 +57,17 @@ export const organizationCollection = buildCollection<IOrganization>({
             dataType: "date",
             name: "Created at",
             autoValue: "on_create",
-            readOnly: true
+            disabled: {
+                hidden: true
+            }
         }),
         updatedAt: buildProperty({
             dataType: "date",
             name: "Updated at",
             autoValue: "on_update",
-            readOnly: true
+            disabled: {
+                hidden: true
+            }
         })
     }
 });

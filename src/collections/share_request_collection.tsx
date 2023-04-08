@@ -58,6 +58,8 @@ export function buildShareRequestCollection(mode: "requesting" | "approving" | "
         path: "share_requests",
         group: "Administration",
         icon: "Share",
+        hideIdFromCollection: true,
+        hideIdFromForm: true,
         permissions: ({ authController }) => ({
             edit: true,
             create: mode !== "admin",
@@ -129,7 +131,9 @@ export function buildShareRequestCollection(mode: "requesting" | "approving" | "
                 dataType: "date",
                 name: "Created at",
                 autoValue: "on_create",
-                readOnly: true
+                disabled: {
+                    hidden: true
+                }
             }),
             updatedAt: buildProperty({
                 dataType: "date",

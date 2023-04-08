@@ -21,7 +21,7 @@ const skillCallbacks = buildEntityCallbacks({
                 return { id: Math.floor(Math.random() * 10000), iconName: "link", iconPrefix: "fas", ...link }
             })
         }
-        if(status !== "existing") {
+        if (status !== "existing") {
             const split = path.split("/");
             values.composition = split.length ? split[1] : "";
             values.skilltree = split.length ? split[3] : "";
@@ -38,7 +38,7 @@ const skillCallbacks = buildEntityCallbacks({
     ) => {
         const collectionPath = path + "/" + entityId + "/skills"
         const error = await deleteFromPathRecursively(collectionPath, "Skill")
-        if(error) throw new Error(error);
+        if (error) throw new Error(error);
         // if(entity.values.countChildren && entity.values.countChildren > 0) throw new Error("This skill has children. Delete the child skills first");
     },
 });
@@ -55,18 +55,17 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
         path: "skills",
         group: "Content",
         subcollections,
+        hideIdFromCollection: true,
+        hideIdFromForm: true,
         initialSort: hasSubcollections ? ["order", "asc"] : undefined,
         icon: "FormatListBulleted",
         inlineEditing: false,
         defaultSize: "s",
-        permissions: ({ authController }) => {
-            const isStudent = authController.extra?.roles.includes("student");
-            return ({
-                edit: !isStudent,
-                create: !isStudent,
-                // we have created the roles object in the navigation builder
-                delete: !isStudent
-            })
+        permissions: {
+            edit: true,
+            create: true,
+            // we have created the roles object in the navigation builder
+            delete: true
         },
         Actions: [MoveDownAction, MoveUpAction],
         properties: {
@@ -124,7 +123,9 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
             order: {
                 name: "Order",
                 dataType: "number",
-                readOnly: true
+                disabled: {
+                    hidden: true
+                }
             },
             gradeSkill: {
                 name: "Graded skill",
@@ -159,13 +160,17 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
                 dataType: "date",
                 name: "Created at",
                 autoValue: "on_create",
-                readOnly: true
+                disabled: {
+                    hidden: true
+                }
             }),
             updatedAt: buildProperty({
                 dataType: "date",
                 name: "Updated at",
                 autoValue: "on_update",
-                readOnly: true
+                disabled: {
+                    hidden: true
+                }
             })
         },
         callbacks: skillCallbacks
