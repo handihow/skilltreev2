@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-    SkillTreeGroup,
-    SkillProvider,
-    SavedDataType,
-} from "beautiful-skill-tree";
+
 import {
     Autocomplete,
     Box,
@@ -35,6 +31,7 @@ import { createDocRef, db } from "../services/firestore";
 import { IEvaluation } from "../types/ievaluation.type";
 import { IEvent } from "../types/ievent.type";
 import { buildUsersCollection } from "../collections/user/user_collection";
+import { SavedDataType, SkillProvider, SkillTreeGroup } from "../widgets/BST";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars

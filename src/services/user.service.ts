@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { User, GoogleAuthProvider, OAuthProvider, linkWithPopup, unlink, getAuth } from "firebase/auth";
 import { db } from "./firestore";
-import { SavedDataType } from "beautiful-skill-tree";
+import { SavedDataType } from "../widgets/BST/models/index";
 import { AutocompleteOption } from "../types/autoCompleteOption.type";
 import { EntityStatus } from "firecms";
 import { IUser } from "../types/iuser.type";

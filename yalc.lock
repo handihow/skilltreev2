@@ -1,9 +1,0 @@
-{
-  "version": "v1",
-  "packages": {
-    "beautiful-skill-tree": {
-      "signature": "924ab1b230ac33ac44f2a38c46a09708",
-      "file": true
-    }
-  }
-}

@@ -1,4 +1,4 @@
-import { SkillThemeType } from "beautiful-skill-tree";
+import { SkillThemeType } from "../widgets/BST";
 
 export type IComposition = {
     id?: string;

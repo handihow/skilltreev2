@@ -30,11 +30,11 @@ export function CustomLoginView(props: FirebaseLoginViewProps) {
                                 By signing in you agree to our <a
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    href={"https://firecms.co/policy/terms_conditions"}>
+                                    href={"https://easyskilltree.com/terms-and-conditions/"}>
                                     Terms and Conditions</a> and our <a
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        href={"https://firecms.co/policy/privacy_policy"}>
+                                        href={"https://easyskilltree.com/privacy/"}>
                                     Privacy policy</a>
                             </Typography>
                         } />

@@ -1,0 +1,419 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "comments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "skill",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "compositions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "pendingApprovalUsers",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "lastUpdate",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "compositions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sharedUsers",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "lastUpdate",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "compositions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "user",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastUpdate",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "evaluations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "composition",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "student",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "composition",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "student",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fl_content",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "_fl_meta_.env",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.locale",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.schema",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "assessment",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fl_content",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "_fl_meta_.env",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.locale",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.schema",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "assessment",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "user",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fl_content",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "_fl_meta_.env",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.locale",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.schema",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fl_content",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "_fl_meta_.env",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.locale",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.schema",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "program",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fl_content",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "_fl_meta_.env",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.locale",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.schema",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "program",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "user",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fl_content",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "programs",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "_fl_meta_.env",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.locale",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.schema",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fl_content",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "users",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "_fl_meta_.env",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.locale",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.schema",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_fl_meta_.status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "results",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "compositions",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "displayName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "skills",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "composition",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "skills",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "skilltree",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "skills",
+      "fieldPath": "composition",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "skills",
+      "fieldPath": "id",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "skills",
+      "fieldPath": "skilltree",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    }
+  ]
+}

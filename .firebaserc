@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "skilltree-b6bba"
+  },
+  "targets": {
+    "skilltree-b6bba": {
+      "hosting": {
+        "skilltreev2": [
+          "skilltree-firecms"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

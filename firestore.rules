@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function userPermissions(){
+      return get(get(/databases/$(database)/documents/fl_users/$(request.auth.uid)).data.permissions).data
+    }
+
+    function isContentPermitted(schema, action) {
+      return request.auth != null && userPermissions().content.production[schema][action] == true
+    }
+
+    function isCollectionPermitted(collection, action) {
+      return request.auth != null && userPermissions()[collection][action] == true
+    }
+
+    function isCollectionPermittedProduction(collection, action) {
+      return request.auth != null && userPermissions()[collection].production[action] == true
+    }
+
+    function isSettingsPermitted(settings, action) {
+      return request.auth != null && userPermissions().settings[settings][action] == true
+    }
+
+    match /fl_content/{document=**} {
+      allow read: if isContentPermitted(resource.data._fl_meta_.schema, 'view') ;
+      allow update: if isContentPermitted(request.resource.data._fl_meta_.schema, 'update');
+      allow create: if isContentPermitted(request.resource.data._fl_meta_.schema, 'create');
+      allow delete: if isContentPermitted(resource.data._fl_meta_.schema, 'delete');
+    }
+
+    match /fl_environments/{document} {
+      allow read: if isSettingsPermitted('environments', 'view');
+      allow update: if isSettingsPermitted('environments', 'update');
+      allow create: if isSettingsPermitted('environments', 'create');
+      allow delete: if isSettingsPermitted('environments', 'delete');
+    }
+
+    match /fl_files/{document=**} {
+      allow read: if isCollectionPermitted('media', 'view');
+      allow update: if isCollectionPermitted('media', 'update');
+      allow create: if isCollectionPermitted('media', 'create');
+      allow delete: if isCollectionPermitted('media', 'delete');
+    }
+
+    match /fl_folders/{document=**} {
+      allow read: if isCollectionPermitted('media', 'view');
+      allow update: if isCollectionPermitted('media', 'update');
+      allow create: if isCollectionPermitted('media', 'create');
+      allow delete: if isCollectionPermitted('media', 'delete');
+    }
+
+    match /fl_locales/{document=**} {
+      allow read: if isSettingsPermitted('locales', 'view');
+      allow update: if isSettingsPermitted('locales', 'update');
+      allow create: if isSettingsPermitted('locales', 'create');
+      allow delete: if isSettingsPermitted('locales', 'delete');
+    }
+
+    match /fl_navigation/{document=**} {
+      allow read: if isCollectionPermittedProduction('navigation', 'view');
+      allow update: if isCollectionPermittedProduction('navigation', 'update');
+      allow create: if isCollectionPermittedProduction('navigation', 'create');
+      allow delete: if isCollectionPermittedProduction('navigation', 'delete');
+    }
+
+    match /fl_permissions/{document=**} {
+      allow read: if isCollectionPermitted('permissions', 'view');
+      allow update: if isCollectionPermitted('permissions', 'update');
+      allow create: if isCollectionPermitted('permissions', 'create');
+      allow delete: if isCollectionPermitted('permissions', 'delete');
+    }
+
+    match /fl_schemas/{document=**} {
+      allow read: if isCollectionPermittedProduction('schemas', 'view');
+      allow update: if isCollectionPermittedProduction('schemas', 'update');
+      allow create: if isCollectionPermittedProduction('schemas', 'create');
+      allow delete: if isCollectionPermittedProduction('schemas', 'delete');
+    }
+
+    match /fl_settings/{document=**} {
+      allow read: if isSettingsPermitted('general', 'view');
+      allow update: if isSettingsPermitted('general', 'update');
+      allow create: if isSettingsPermitted('general', 'create');
+      allow delete: if isSettingsPermitted('general', 'delete');
+    }
+
+    match /fl_users/{document=**} {
+      allow read: if request.auth.uid == resource.id || isCollectionPermitted('users', 'view');
+      allow update: if request.auth.uid == resource.id || isCollectionPermitted('users', 'update');
+      allow create: if isCollectionPermitted('users', 'create');
+      allow delete: if isCollectionPermitted('users', 'delete');
+    }
+
+    match /fl_backups/{document=**} {
+      allow read: if isSettingsPermitted('backups', 'view');
+      allow update: if isSettingsPermitted('backups', 'update');
+      allow create: if isSettingsPermitted('backups', 'create');
+      allow delete: if isSettingsPermitted('backups', 'delete');
+    }
+
+    match /fl_workflows/{document} {
+      allow read: if isSettingsPermitted('workflows', 'view');
+      allow update: if isSettingsPermitted('workflows', 'update');
+      allow create: if isSettingsPermitted('workflows', 'create');
+      allow delete: if isSettingsPermitted('workflows', 'delete');
+    }
+
+    match /fl_webhooks/{document} {
+      allow read: if isCollectionPermitted('webhooks', 'view');
+      allow update: if isCollectionPermitted('webhooks', 'update');
+      allow create: if isCollectionPermitted('webhooks', 'create');
+      allow delete: if isCollectionPermitted('webhooks', 'delete');
+    }
+
+    match /fl_webhooks/{document}/activityLog/{log} {
+      allow read: if isCollectionPermitted('webhooks', 'view');
+      allow update: if isCollectionPermitted('webhooks', 'update');
+      allow create: if isCollectionPermitted('webhooks', 'create');
+      allow delete: if isCollectionPermitted('webhooks', 'delete');
+    }
+
+    function guestPermissions() {
+      return get(/databases/$(database)/documents/fl_permissions/DrgZBWrF8xZTeFcnlHL3).data
+    }
+
+    match /backgrounds/{imageId}{
+    	//read only
+    	allow read: if guestPermissions().environments.production == true;
+    }
+
+    match /results/{userId}{
+      allow read, write: if request.auth.uid != null;
+    }
+
+    match /results/{userId}/skilltrees/{skilltreeId}{
+    	allow read: if request.auth.uid != null;
+      allow write: if
+      request.auth.uid == get(/databases/$(database)/documents/compositions/$(resource.data.compositionId)).data.user ||
+      (request.auth.uid != null &&
+      get(/databases/$(database)/documents/compositions/$(resource.data.compositionId)).data.loggedInUsersCanEdit)
+    }
+
+    match /compositions/{compositionId}{
+    	allow read: if !resource.data.loggedInUsersOnly || request.auth.uid != null;
+      allow write: if request.auth.uid != null;
+    }
+
+    match /{document=**} {
+      allow read: if guestPermissions().environments.production == true;
+      allow write: if request.auth.uid != null;
+    }
+
+  }
+}

@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-    SkillTreeGroup,
-    SkillProvider,
-} from "beautiful-skill-tree";
+
 import {
     Box,
     Card,
@@ -37,6 +34,7 @@ import { IComposition } from "../types/icomposition.type";
 import { ISkilltree } from "../types/iskilltree.type";
 import AlertDialog from "../widgets/AlertDialog";
 import { SkillTreeWidget } from "../widgets/SkillTreeWidget";
+import { SkillProvider, SkillTreeGroup } from "../widgets/BST";
 
 export function SkillTreeEditor() {
     // hook to display custom snackbars
