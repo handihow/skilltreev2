@@ -47,11 +47,11 @@ export function buildSkilltreesCollection(withSubCollections: boolean): EntityCo
         singularName: "Tree",
         path: "skilltrees",
         initialSort: ["order", "asc"],
-        permissions: {
-            edit: true,
-            create: true,
-            delete: true
-        },
+        permissions: ({ authController }) => ({
+            edit: authController.extra?.permissions.compositions.edit,
+            create: authController.extra?.permissions.compositions.create,
+            delete: authController.extra?.permissions.compositions.delete
+        }),
         Actions: [MoveDownAction, MoveUpAction],
         subcollections,
         inlineEditing: false,

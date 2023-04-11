@@ -5,6 +5,7 @@ import {
 
 import {
     useAuthController,
+    useModeController,
     useSnackbarController,
 } from "firecms";
 import { useNavigate, useParams } from "react-router";
@@ -22,6 +23,7 @@ import { IComposition } from "../types/icomposition.type";
 export function ShareSkillTreeView() {
     const snackbarController = useSnackbarController();
     const authController = useAuthController();
+    const modeController = useModeController();
     const { id } = useParams();
     const [composition, setComposition] = useState<IComposition | null>(null);
     const navigate = useNavigate();
@@ -145,7 +147,7 @@ export function ShareSkillTreeView() {
                         </List>
                     </CardContent>
                     <CardActions>
-                        <Button onClick={backToOverview}>Back</Button>
+                        <Button color={modeController.mode === "dark" ? "secondary" : "primary"} onClick={backToOverview}>Back</Button>
                     </CardActions>
                 </Card>
                 <Card sx={{ m: 4, maxWidth: "450px" }}>
@@ -160,6 +162,7 @@ export function ShareSkillTreeView() {
                                 </ListItemAvatar>
                                 <ListItemText primary="Copy" secondary="Users can copy your SkillTree on Shared SkillTree page" />
                                 <Switch
+                                    color={modeController.mode === "dark" ? "secondary" : "primary"}
                                     edge="end"
                                     onChange={handleToggle('copy')}
                                     checked={checked.indexOf('copy') !== -1}
@@ -176,6 +179,7 @@ export function ShareSkillTreeView() {
                                 </ListItemAvatar>
                                 <ListItemText primary="Completion status" secondary="Users can update the completion status" />
                                 <Switch
+                                    color={modeController.mode === "dark" ? "secondary" : "primary"}
                                     edge="end"
                                     onChange={handleToggle('update')}
                                     checked={checked.indexOf('update') !== -1}
@@ -192,6 +196,7 @@ export function ShareSkillTreeView() {
                                 </ListItemAvatar>
                                 <ListItemText primary="Authorize share requests" secondary="You must authorize share requests" />
                                 <Switch
+                                    color={modeController.mode === "dark" ? "secondary" : "primary"}
                                     edge="end"
                                     onChange={handleToggle('authorize')}
                                     checked={checked.indexOf('authorize') !== -1}
@@ -200,7 +205,7 @@ export function ShareSkillTreeView() {
                                     }}
                                 />
                             </ListItem>
-                            <ListItem key="tips" secondaryAction={
+                            {/* <ListItem key="tips" secondaryAction={
                                 <IconButton edge="end" aria-label="delete">
                                     <OpenInNewIcon />
                                 </IconButton>
@@ -211,7 +216,7 @@ export function ShareSkillTreeView() {
                                     </Avatar>
                                 </ListItemAvatar>
                                 <ListItemText primary="PRO tip" secondary="In the SkillTree PRO application you can assign SkillTrees to groups of students" />
-                            </ListItem>
+                            </ListItem> */}
                         </List>
                     </CardContent>
 

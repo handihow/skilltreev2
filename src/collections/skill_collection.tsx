@@ -61,12 +61,11 @@ function skillsCollectionBuilder(level: number, hasSubcollections: boolean, desc
         icon: "FormatListBulleted",
         inlineEditing: false,
         defaultSize: "s",
-        permissions: {
-            edit: true,
-            create: true,
-            // we have created the roles object in the navigation builder
-            delete: true
-        },
+        permissions: ({ authController }) => ({
+            edit: authController.extra?.permissions.compositions.edit,
+            create: authController.extra?.permissions.compositions.create,
+            delete: authController.extra?.permissions.compositions.delete
+        }),
         Actions: [MoveDownAction, MoveUpAction],
         properties: {
             title: {

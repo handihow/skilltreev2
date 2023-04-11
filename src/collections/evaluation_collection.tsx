@@ -227,14 +227,14 @@ export function buildEvaluationsCollection(
         hideIdFromForm: true,
         alias: path === "history" ? undefined : evaluationModel ? "evaluate" : "evaluations",
         defaultSize: "s",
-        group: "Grades",
+        group: "Administration",
         icon: "Grading",
         subcollections,
         permissions: ({ authController }) => ({
-            edit: !authController.extra?.roles?.includes('student') && path !== "history",
-            create: false,
+            edit: path === "history" ? false : authController.extra?.permissions.evaluations.edit,
+            create: path === "history" ? false : authController.extra?.permissions.evaluations.create,
             // we have created the roles object in the navigation builder
-            delete: authController.extra?.roles?.includes('super')
+            delete: path === "history" ? false :  authController.extra?.permissions.evaluations.delete
         }),
         properties,
         callbacks: evaluationCallbacks

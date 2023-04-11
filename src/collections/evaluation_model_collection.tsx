@@ -9,13 +9,13 @@ export function buildEvaluationModelCollection(isAdmin: boolean): EntityCollecti
         description: "Manage evaluation models",
         singularName: "Evaluation model",
         path: "evaluation_models",
-        group: "Grades",
+        group: "Administration",
         icon: "Grade",
         permissions: ({ authController }) => ({
-            edit: authController.extra?.roles?.includes('super'),
-            create: authController.extra?.roles?.includes('super'),
+            edit: authController.extra?.permissions.evaluation_models.edit,
+            create: authController.extra?.permissions.evaluation_models.create,
             // we have created the roles object in the navigation builder
-            delete: authController.extra?.roles?.includes('super')
+            delete: authController.extra?.permissions.evaluation_models.delete
         }),
         defaultSize: "l",
         hideIdFromCollection: true,

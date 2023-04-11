@@ -1,4 +1,5 @@
 import { buildCollection, buildEntityCallbacks } from "firecms";
+import { roles } from "../properties";
 
 const roleCallbacks = buildEntityCallbacks({
     onPreSave: ({
@@ -15,18 +16,12 @@ const roleCallbacks = buildEntityCallbacks({
     }
 });
 
-const roles = {
-    "student": "Student",
-    "instructor": "Instructor",
-    "admin": "Admin",
-    "super": "Super Admin"
-};
-
 export const rolesCollection = buildCollection({
     path: "roles",
     customId: roles,
     name: "Roles",
     singularName: "Role",
+    exportable: false,
     properties: {
         hasRole: {
             name: "Has role",

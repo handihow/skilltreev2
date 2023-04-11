@@ -61,10 +61,10 @@ export function buildShareRequestCollection(mode: "requesting" | "approving" | "
         hideIdFromCollection: true,
         hideIdFromForm: true,
         permissions: ({ authController }) => ({
-            edit: true,
-            create: mode !== "admin",
+            edit: authController.extra?.permissions.share_requests.edit,
+            create: authController.extra?.permissions.share_requests.create,
             // we have created the roles object in the navigation builder
-            delete: authController.extra?.roles?.includes('super')
+            delete: authController.extra?.permissions.share_requests.delete
         }),
         forceFilter: id ? {composition: ["==", id]} : undefined,
         properties: {

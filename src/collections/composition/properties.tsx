@@ -90,7 +90,6 @@ export const theme = (hideFromCollection: boolean) => {
     return buildProperty({
         name: "Theme",
         dataType: "map",
-        expanded: false,
         properties: {
             backgroundColor: {
                 name: "Skilltree background",

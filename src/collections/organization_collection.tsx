@@ -1,23 +1,8 @@
-import { buildCollection, buildProperty } from "firecms";
+import { EntityCollection, buildCollection, buildProperties, buildProperty } from "firecms";
 import { IOrganization } from "../types/iorganization.type";
 
-export const organizationCollection = buildCollection<IOrganization>({
-    name: "Organizations",
-    description: "Manage organizations",
-    singularName: "Organization",
-    path: "organizations",
-    group: "Administration",
-    icon: "CorporateFare",
-    defaultSize: "s",
-    hideIdFromCollection: true,
-    hideIdFromForm: true,
-    permissions: ({ authController }) => ({
-        edit: authController.extra?.roles.includes("admin"),
-        create: authController.extra?.roles.includes("admin"),
-        // we have created the roles object in the navigation builder
-        delete: authController.extra?.roles.includes("super")
-    }),
-    properties: {
+export function buildOrganizationCollection(canView: boolean): EntityCollection<IOrganization> {
+    let properties = buildProperties<any>({
         name: {
             name: "Name",
             validation: { required: true },
@@ -42,8 +27,11 @@ export const organizationCollection = buildCollection<IOrganization>({
             name: "Country",
             validation: { required: true },
             dataType: "string"
-        },
-        contacts: buildProperty({
+        }
+    })
+
+    if (canView) {
+        properties.contacts = buildProperty({
             name: "Contacts",
             dataType: "array",
             of: {
@@ -52,16 +40,16 @@ export const organizationCollection = buildCollection<IOrganization>({
                 previewProperties: ["displayName", "email"],
             },
             expanded: false
-        }),
-        createdAt: buildProperty({
+        });
+        properties.createdAt = buildProperty({
             dataType: "date",
             name: "Created at",
             autoValue: "on_create",
             disabled: {
                 hidden: true
             }
-        }),
-        updatedAt: buildProperty({
+        });
+        properties.updatedAt = buildProperty({
             dataType: "date",
             name: "Updated at",
             autoValue: "on_update",
@@ -70,4 +58,23 @@ export const organizationCollection = buildCollection<IOrganization>({
             }
         })
     }
-});
+
+    return buildCollection<IOrganization>({
+        name: "Organizations",
+        description: "Manage organizations",
+        singularName: "Organization",
+        path: "organizations",
+        group: "Administration",
+        icon: "CorporateFare",
+        defaultSize: "s",
+        hideFromNavigation: !canView,
+        hideIdFromCollection: true,
+        hideIdFromForm: true,
+        permissions: ({ authController }) => ({
+            edit: authController.extra?.permissions.organizations.edit,
+            create: authController.extra?.permissions.organizations.create,
+            delete: authController.extra?.permissions.organizations.delete
+        }),
+        properties
+    })
+};

@@ -31,6 +31,12 @@ export function buildAdminCompositionsCollection(organization?: string): EntityC
         alias: "admin-compositions",
         group: "Administration",
         icon: "AccountTree",
+        permissions: ({ authController }) => ({
+            edit: authController.extra?.permissions.compositions.edit,
+            create: authController.extra?.permissions.compositions.create,
+            // we have created the roles object in the navigation builder
+            delete: authController.extra?.permissions.compositions.delete
+        }),
         properties: {
             title,
             user,
@@ -49,8 +55,8 @@ export function buildAdminCompositionsCollection(organization?: string): EntityC
         Actions: [ViewSkillTreeAction],
         inlineEditing: true,
         exportable: false,
-        hideIdFromCollection: organization ? true : false,
-        hideIdFromForm: organization ? true : false,
+        hideIdFromCollection: true,
+        hideIdFromForm: true,
         subcollections: [buildSkilltreesCollection(true)],
         callbacks: compositionCallbacks
     })
@@ -90,10 +96,10 @@ export function buildTeacherCompositionsCollection(simple: boolean, organization
         Actions: [ViewSkillTreeAction],
         inlineEditing: false,
         permissions: ({ authController }) => ({
-            edit: true,
-            create: false,
+            edit: authController.extra?.permissions.compositions.edit,
+            create: authController.extra?.permissions.compositions.create,
             // we have created the roles object in the navigation builder
-            delete: authController.extra?.roles.includes("super")
+            delete: authController.extra?.permissions.compositions.delete
         }),
         subcollections,
         icon: "AccountTree",

@@ -23,8 +23,7 @@ export const standardTheme = {
   nodeAlternativeFontColor: 'white',
   nodeAltenativeActiveFontColor: 'white',
   nodeOverlayColor: 'white',
-  nodeAlternativeActiveBackgroundColor: `
-    linear-gradient(
+  nodeAlternativeActiveBackgroundColor: `linear-gradient(
       to right,
       #b9e562 0%,
       #41e2bd 50%,

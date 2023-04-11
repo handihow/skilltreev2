@@ -19,7 +19,7 @@ import { IUser } from "../types/iuser.type";
 import { IComposition } from "../types/icomposition.type";
 import { IResult } from "../types/iresult.type";
 
-export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: boolean) : Promise<string | undefined> => {
+export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: boolean): Promise<string | undefined> => {
     const auth = getAuth();
     const user = auth.currentUser;
     let provider;
@@ -30,13 +30,13 @@ export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: bo
     }
     if (!provider || !user) return;
     try {
-        if(link) {
+        if (link) {
             await linkWithPopup(user, provider);
         } else {
             await unlink(user, provider.providerId)
         }
         return;
-    } catch(err: any) {
+    } catch (err: any) {
         return err.message;
     }
 }
@@ -45,7 +45,7 @@ export const getUserRoles = async (userId: string): Promise<[string[] | null, st
     const userRolesRef = collection(db, 'users/' + userId + '/roles')
     try {
         const snap = await getDocs(userRolesRef);
-        if (snap.empty) return [[], "No user roles found"]
+        if (snap.empty) return [["instructor"], null]
         const roles = snap.docs.map(d => {
             if (d.data().hasRole) {
                 return d.id
@@ -56,6 +56,30 @@ export const getUserRoles = async (userId: string): Promise<[string[] | null, st
         return [roles, null];
     } catch (err: any) {
         return [[], "Error while retrieving user roles" + err.message]
+    }
+}
+
+export const getUserPermissions = async (roles: string[]): Promise<[{ [char: string]: { view: boolean, create: boolean, edit: boolean, delete: boolean } } | null, string | null]> => {
+    const permissionRef = collection(db, 'permissions');
+    let permissions: { [char: string]: { view: boolean, create: boolean, edit: boolean, delete: boolean } } = {};
+    try {
+        const snap = await getDocs(permissionRef);
+        snap.docs.forEach(d => {
+            if (roles.includes(d.id)) {
+                const rolePermissions: { [char: string]: { view: boolean, create: boolean, edit: boolean, delete: boolean } } = d.data();
+                Object.keys(rolePermissions).forEach(key => {
+                    permissions[key] = {
+                        view: permissions.view ? true : rolePermissions[key].view,
+                        create: permissions.create ? true : rolePermissions[key].create,
+                        edit: permissions.edit ? true : rolePermissions[key].edit,
+                        delete: permissions.delete ? true : rolePermissions[key].delete
+                    }
+                })
+            };
+        });
+        return [permissions, null];
+    } catch (err: any) {
+        return [null, "Error while retrieving user permissions" + err.message]
     }
 }
 

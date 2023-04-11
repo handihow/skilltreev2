@@ -161,16 +161,16 @@ export function buildEventsCollection(
         singularName: "Event",
         path: "events",
         defaultSize: "s",
-        group: "Schedule",
+        group: "Administration",
         icon: "CalendarMonth",
         hideIdFromCollection: true,
         hideIdFromForm: true,
         inlineEditing: false,
         permissions: ({ authController }) => ({
-            edit: true,
-            create: false,
+            edit: authController.extra?.permissions.events.edit,
+            create: authController.extra?.permissions.events.create,
             // we have created the roles object in the navigation builder
-            delete: !authController.extra?.roles?.includes('student')
+            delete: authController.extra?.permissions.events.delete
         }),
         properties,
         callbacks: eventCallbacks

@@ -6,7 +6,7 @@ import { UserSchedulerView } from "../../custom_entity_view/scheduler";
 import { UserEvaluationsView } from "../../custom_entity_view/userEvals";
 import { rolesCollection } from "./role_collection";
 
-export function buildUsersCollection(view: "admin" | "teacher" | "record", organization?: string, compositionId?: string): EntityCollection<IUser> {
+export function buildUsersCollection(view: "admin" | "teacher", organization?: string, compositionId?: string): EntityCollection<IUser> {
 
     return buildCollection<IUser>({
         name: "Users",
@@ -16,18 +16,16 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
         group: "Administration",
         defaultSize: "s",
         alias: compositionId ? compositionId : undefined,
-        subcollections: view === "admin" ? [
-            rolesCollection
-        ] : [],
+        subcollections: [rolesCollection],
         icon: "Group",
         inlineEditing: false,
-        hideIdFromCollection: view === "admin" && !organization,
-        hideIdFromForm: view === "admin" && !organization,
+        hideIdFromCollection: true,
+        hideIdFromForm: true,
         permissions: ({ authController }) => ({
-            edit: view !== "teacher",
-            create: authController.extra?.roles.includes("admin") || authController.extra?.roles.includes("super"),
+            edit: authController.extra?.permissions.users.edit,
+            create: authController.extra?.permissions.users.create,
             // we have created the roles object in the navigation builder
-            delete: authController.extra?.roles.includes("super")
+            delete: authController.extra?.permissions.users.delete
         }),
         views: [
             {
@@ -86,3 +84,37 @@ export function buildUsersCollection(view: "admin" | "teacher" | "record", organ
         },
     })
 };
+
+export const editRecordCollection = buildCollection<IUser>({
+    name: "Your record",
+    description: "Manage your user record",
+    singularName: "Your record",
+    path: "users",
+    alias: "your-record",
+    hideIdFromForm: true,
+    subcollections: [rolesCollection],
+    properties: {
+        email: {
+            name: "Email",
+            email: true,
+            disabled: true,
+            dataType: "string",
+            
+        },
+        displayName: {
+            name: "Display name",
+            dataType: "string"
+        },
+        organizations: {
+            name: "Organizations",
+            dataType: "array",
+            description: "Your primary organization must be on the first place!",
+            longDescription: "Add yourself to an organization to make it easier to share SkillTrees",
+            of: {
+                dataType: "reference",
+                path: "organizations",
+                previewProperties: ["name", "city"]
+            }
+        }
+    }
+});

@@ -1,13 +1,15 @@
 // import React from "react";
 import { Box, Button, Card, CardActionArea, CardActions, CardContent, CardMedia, Container, Typography } from "@mui/material";
-import { useAuthController, useModeController, useSnackbarController } from "firecms";
+import { useAuthController, useModeController, useSideEntityController, useSnackbarController } from "firecms";
 import { linkAccount } from "../services/user.service";
+import { editRecordCollection } from "../collections/user/user_collection";
 
 export function MyAccount() {
     // hook to do operations related to authentication
     const authController = useAuthController();
     const snackbarController = useSnackbarController();
     const modeController = useModeController();
+    const sideEntityController = useSideEntityController();
 
     const linkUserAccount = async (provider: "Google" | "Microsoft", link: boolean) => {
         const error = await linkAccount(provider, link);
@@ -25,6 +27,16 @@ export function MyAccount() {
             if (msIndex > -1) providerIds.splice(msIndex, 1);
         }
         authController.setExtra({ providerIds })
+        const addedText = link ? "linked " : "unlinked "
+        snackbarController.open({ type: "success", message: "Successfully " + addedText + provider })
+    }
+
+    const editUserAccount = () => {
+        sideEntityController.open({
+            path: "users",
+            collection: editRecordCollection,
+            entityId: authController.user?.uid
+        })
     }
 
     return (
@@ -40,7 +52,7 @@ export function MyAccount() {
                     justifyItems={"top"}
                 >
                     <Card sx={{ m: 1, width: "350px" }}>
-                        <CardActionArea>
+                        <CardActionArea onClick={editUserAccount}>
                             {authController.user?.photoURL && <CardMedia
                                 component="img"
                                 height="200"
@@ -51,7 +63,7 @@ export function MyAccount() {
                                 <Typography gutterBottom variant="h5" component="div">
                                     {authController.user?.displayName || "Anonymous"}
                                 </Typography>
-                                <Typography gutterBottom variant="h6" component="div" color="text.secondary">
+                                <Typography gutterBottom component="div" color="text.secondary">
                                     {authController.user?.email || "No email"}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">

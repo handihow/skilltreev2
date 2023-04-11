@@ -1,5 +1,24 @@
 import { buildProperty } from "firecms";
 
+export const roles = {
+    "instructor": "Instructor",
+    "student": "Student",
+    "admin": "Admin",
+    "super": "Super Admin"
+};
+
+export const collections : { [char: string]: string } = {
+    "compositions": "SkillTrees",
+    "comments": "Comments",
+    "evaluations": "Grades",
+    "evaluation_models": "Evaluation models",
+    "events": "Events",
+    "organizations": "Organizations",
+    "permissions": "Permissions",
+    "share_requests": "Share requests",
+    "users": "Users",
+}
+
 export const metaData =
     buildProperty({
         name: "Metadata",
