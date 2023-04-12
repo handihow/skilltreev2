@@ -14,6 +14,7 @@ dist-ssr
 
 # firebase config
 src/firebase_config.ts
+.firebase/*
 
 # Editor directories and files
 .vscode/*
