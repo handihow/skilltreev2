@@ -39,6 +39,7 @@ import { MyGrades } from "./custom_views/MyGrades";
 import { MyAccount } from "./custom_views/MyAccount";
 import { permissionsCollection } from "./collections/permission_collection";
 import { CustomLoginView } from "./custom_views/CustomLoginView";
+import { ToolbarExtraWidget } from "./widgets/ToolbarExtraWidget";
 library.add(fas)
 library.add(fab)
 
@@ -118,7 +119,7 @@ export default function App() {
         <Tooltip
             title="See this project on GitHub">
             <IconButton
-                href={"https://github.com/handihow/skilltree"}
+                href={"https://github.com/handihow/skilltreev2"}
                 rel="noopener noreferrer"
                 target="_blank"
                 component={"a"}
@@ -196,7 +197,7 @@ export default function App() {
         firebaseConfig={firebaseConfig}
         signInOptions={['google.com', 'microsoft.com', 'password', 'anonymous']}
         LoginView={CustomLoginView}
-        toolbarExtraWidget={githubLink}
+        toolbarExtraWidget={ToolbarExtraWidget()}
         logo="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTreeIcon.png?alt=media&token=af824f13-6bfd-46f9-9ec8-35ff020e95c6"
         logoDark="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTree_T_icon.png?alt=media&token=06b80792-f01a-4cfc-9de4-0f89f6d1b3c0"
         primaryColor="#27405f"

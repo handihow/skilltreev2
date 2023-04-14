@@ -251,7 +251,7 @@ export const deleteSkillsOfSkilltree = async (skilltreeId: string) => {
 }
 
 
-export const getCompositionSkillCount = async (compositionId: string, userId: string) : Promise<[number, number, string | null]> => {
+export const getCompositionSkillCount = async (compositionId: string, userId: string): Promise<[number, number, string | null]> => {
     try {
         const skillsColRef = collectionGroup(db, 'skills');
         const skillQuery = query(skillsColRef, where("composition", "==", compositionId), orderBy("order", "asc"));
@@ -267,9 +267,21 @@ export const getCompositionSkillCount = async (compositionId: string, userId: st
             completedCount += completed;
         }
         return [skillCount, completedCount, null];
-    } catch(e: any) {
+    } catch (e: any) {
         return [0, 0, e.message]
     }
-    
+
 }
 
+
+export const getSharedCompositionIds = async (userId: string): Promise<[string[], string | null]> => {
+    const skillTreeColRef = collection(db, 'compositions');
+    const skillTreeQuery = query(skillTreeColRef, where("sharedUsers", "array-contains", userId), orderBy("title", "asc"));
+    try {
+        const snap = await getDocs(skillTreeQuery);
+        if (snap.empty) return [[], null];
+        return [snap.docs.map(d => d.id), null]
+    } catch (err: any) {
+        return [[], err.message as string];
+    }
+}
