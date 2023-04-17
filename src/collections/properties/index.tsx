@@ -10,7 +10,7 @@ export const roles = {
 export const collections : { [char: string]: string } = {
     "compositions": "SkillTrees",
     "comments": "Comments",
-    "evaluations": "Grades",
+    "evaluations": "Evaluations",
     "evaluation_models": "Evaluation models",
     "events": "Events",
     "organizations": "Organizations",

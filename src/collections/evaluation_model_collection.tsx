@@ -6,7 +6,7 @@ export function buildEvaluationModelCollection(isAdmin: boolean): EntityCollecti
     
     return buildCollection<IEvaluationModel>({
         name: "Evaluation models",
-        description: "Manage evaluation models",
+        description: "Skills can be evaluated based on models",
         singularName: "Evaluation model",
         path: "evaluation_models",
         group: "Administration",

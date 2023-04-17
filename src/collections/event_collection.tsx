@@ -157,7 +157,7 @@ export function buildEventsCollection(
 
     return buildCollection<IEvent>({
         name: "Events",
-        description: "Manage events",
+        description: "Events administration",
         singularName: "Event",
         path: "events",
         defaultSize: "s",

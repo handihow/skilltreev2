@@ -220,7 +220,7 @@ export function buildEvaluationsCollection(
 
     return buildCollection<IEvaluation>({
         name: path === "evaluations" ? "Evaluations" : "History",
-        description: path === "evaluations" ? "Manage evaluations" : undefined,
+        description: "Evaluations of skills by instructor",
         singularName: path === "evaluations" ? "Evaluation" : "History",
         path,
         hideIdFromCollection: true,
