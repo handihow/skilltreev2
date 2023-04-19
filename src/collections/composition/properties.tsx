@@ -25,6 +25,18 @@ export const sharedUsers = (organization?: string) => {
     })
 } 
 
+export const groups = (organization?: string) => {
+    return buildProperty({
+        name: "Groups",
+        dataType: "array",
+        of: {
+            dataType: "reference",
+            path: "organizations/" + organization + "/groups",
+            previewProperties: ["name"]
+        },
+    })
+} 
+
 export const canCopy = buildProperty({
     name: "Can copy",
     description: "Users can copy the SkillTree if it is shared",

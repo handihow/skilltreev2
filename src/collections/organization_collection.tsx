@@ -1,5 +1,61 @@
-import { EntityCollection, buildCollection, buildProperties, buildProperty } from "firecms";
+import { EntityCollection, EntityOnSaveProps, buildCollection, buildEntityCallbacks, buildProperties, buildProperty } from "firecms";
 import { IOrganization } from "../types/iorganization.type";
+import { IGroup } from "../types/igroup.type";
+
+export function buildGroupCollection(organizationId?: string): EntityCollection<IGroup> {
+    return buildCollection<IGroup>({
+        name: "Groups",
+        description: "Your primary organization groups",
+        singularName: "Group",
+        group: "Administration",
+        path: organizationId ? `organizations/${organizationId}/groups` :  "groups",
+        defaultSize: "s",
+        hideIdFromCollection: true,
+        icon: "Groups",
+        hideIdFromForm: true,
+        initialSort: ["name", "asc"],
+        permissions: ({ authController }) => ({
+            edit: authController.extra?.permissions.groups.edit,
+            create: authController.extra?.permissions.groups.create,
+            delete: authController.extra?.permissions.groups.delete
+        }),
+        properties: {
+            name: buildProperty({
+                dataType: "string",
+                name: "Name",
+                validation: { required: true }
+            }),
+            description: buildProperty({
+                dataType: "string",
+                name: "Description",
+            }),
+            period: buildProperty({
+                dataType: "string",
+                name: "Period",
+            }),
+            students: buildProperty({
+                name: "Students",
+                dataType: "array",
+                of: {
+                    dataType: "reference",
+                    path: "users",
+                    previewProperties: ["displayName", "email"],
+                },
+                expanded: false
+            }),
+            teachers: buildProperty({
+                name: "Instructors",
+                dataType: "array",
+                of: {
+                    dataType: "reference",
+                    path: "users",
+                    previewProperties: ["displayName", "email"],
+                },
+                expanded: false
+            })
+        }
+    })
+}
 
 export function buildOrganizationCollection(canView: boolean): EntityCollection<IOrganization> {
     let properties = buildProperties<any>({
@@ -70,6 +126,7 @@ export function buildOrganizationCollection(canView: boolean): EntityCollection<
         hideFromNavigation: !canView,
         hideIdFromCollection: true,
         hideIdFromForm: true,
+        subcollections: [buildGroupCollection()],
         permissions: ({ authController }) => ({
             edit: authController.extra?.permissions.organizations.edit,
             create: authController.extra?.permissions.organizations.create,

@@ -17,7 +17,7 @@ import { getUserOrganization, getUserPermissions, getUserRoles, updateUser } fro
 
 import { buildUsersCollection } from "./collections/user/user_collection";
 import { buildAdminCompositionsCollection } from "./collections/composition/composition_collection";
-import { buildOrganizationCollection } from "./collections/organization_collection";
+import { buildGroupCollection, buildOrganizationCollection } from "./collections/organization_collection";
 import { firebaseConfig } from "./firebase_config";
 import { buildShareRequestCollection } from "./collections/share_request_collection";
 import { MySkillTreesView } from "./custom_views/MySkillTrees";
@@ -63,7 +63,7 @@ const customViews: CMSView[] = [
     {
         path: "my-schedule",
         name: "My Schedule",
-        group: "Schedule",
+        group: "Content",
         description: "Your schedule",
         view: <MySchedule />,
         icon: "Today"
@@ -151,11 +151,13 @@ export default function App() {
         const [permissions, error3] = await getUserPermissions(roles ? roles : ["instructor"]);
         if(error3) throw Error(error3)
         authController.setExtra({roles, organization, providerIds, permissions});
+        console.log(permissions);
         if(roles && roles.includes("super") && user) {
             setCollections([
                 buildEvaluationModelCollection(true), 
                 buildEvaluationsCollection("evaluations"),
                 buildEventsCollection("table"),
+                buildGroupCollection(organization),
                 buildOrganizationCollection(permissions?.organizations?.view || false),
                 permissionsCollection,
                 buildShareRequestCollection("admin", user),
@@ -165,6 +167,7 @@ export default function App() {
         } else if(roles && roles.includes("admin") && organization){
             setCollections([
                 buildEvaluationModelCollection(true),
+                buildGroupCollection(organization),
                 buildOrganizationCollection(permissions?.organizations?.view || false),
                 buildAdminCompositionsCollection(organization), 
                 buildUsersCollection("admin", organization),

@@ -1,10 +1,11 @@
 import {
-    buildCollection, EntityCollection, EntityReference,
+    buildCollection, buildEntityCallbacks, buildProperty, EntityCollection, EntityReference,
 } from "firecms";
 import { IUser } from "../../types/iuser.type";
 import { UserSchedulerView } from "../../custom_entity_view/scheduler";
 import { UserEvaluationsView } from "../../custom_entity_view/userEvals";
 import { rolesCollection } from "./role_collection";
+import { updateFirebaseUser } from "../../services/user.service";
 
 export function buildUsersCollection(view: "admin" | "teacher", organization?: string, compositionId?: string): EntityCollection<IUser> {
 
@@ -85,6 +86,14 @@ export function buildUsersCollection(view: "admin" | "teacher", organization?: s
     })
 };
 
+const callbacks = buildEntityCallbacks({
+    onPreSave: async ({ values }) => {
+        const error = await updateFirebaseUser(values.displayName);
+        if (error) throw new Error(error);
+        return values;
+    }
+})
+
 export const editRecordCollection = buildCollection<IUser>({
     name: "Your record",
     description: "Manage your user record",
@@ -97,13 +106,13 @@ export const editRecordCollection = buildCollection<IUser>({
         email: {
             name: "Email",
             email: true,
-            disabled: true,
             dataType: "string",
-            
+            readOnly: true
         },
         displayName: {
             name: "Display name",
-            dataType: "string"
+            dataType: "string",
+            validation: { required: true }
         },
         organizations: {
             name: "Organizations",
@@ -116,5 +125,6 @@ export const editRecordCollection = buildCollection<IUser>({
                 previewProperties: ["name", "city"]
             }
         }
-    }
+    },
+    callbacks
 });

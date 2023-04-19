@@ -14,6 +14,7 @@ export const collections : { [char: string]: string } = {
     "evaluation_models": "Evaluation models",
     "events": "Events",
     "organizations": "Organizations",
+    "groups": "Groups",
     "permissions": "Permissions",
     "share_requests": "Share requests",
     "users": "Users",

@@ -19,7 +19,8 @@ import {
     theme,
     gradeAllSkillsByDefault,
     lastUpdate,
-    createdAt
+    createdAt,
+    groups
 } from "./properties";
 
 export function buildAdminCompositionsCollection(organization?: string): EntityCollection<IComposition> {
@@ -31,6 +32,7 @@ export function buildAdminCompositionsCollection(organization?: string): EntityC
         alias: "admin-compositions",
         group: "Administration",
         icon: "AccountTree",
+        hideFromNavigation: organization ? true : false,
         permissions: ({ authController }) => ({
             edit: authController.extra?.permissions.compositions.edit,
             create: authController.extra?.permissions.compositions.create,
@@ -41,6 +43,7 @@ export function buildAdminCompositionsCollection(organization?: string): EntityC
             title,
             user,
             sharedUsers: sharedUsers(organization),
+            groups: groups(organization),
             canCopy,
             loggedInUsersCanEdit,
             requireShareApproval,
@@ -69,7 +72,10 @@ export function buildTeacherCompositionsCollection(simple: boolean, organization
     let properties = buildProperties<any>({
         title,
     })
-    if (organization) properties.sharedUsers = sharedUsers(organization);
+    if (organization) {
+        properties.sharedUsers = sharedUsers(organization);
+        properties.groups = groups(organization);
+    };
     if (!simple) {
         properties.canCopy = canCopy;
         properties.loggedInUsersCanEdit = loggedInUsersCanEdit;

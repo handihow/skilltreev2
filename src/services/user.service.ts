@@ -8,9 +8,10 @@ import {
     orderBy,
     query,
     setDoc,
+    updateDoc,
     where,
 } from "firebase/firestore";
-import { User, GoogleAuthProvider, OAuthProvider, linkWithPopup, unlink, getAuth } from "firebase/auth";
+import { User, GoogleAuthProvider, OAuthProvider, linkWithPopup, unlink, getAuth, updateProfile, deleteUser } from "firebase/auth";
 import { db } from "./firestore";
 import { SavedDataType } from "../widgets/BST/models/index";
 import { AutocompleteOption } from "../types/autoCompleteOption.type";
@@ -18,11 +19,11 @@ import { EntityStatus } from "firecms";
 import { IUser } from "../types/iuser.type";
 import { IComposition } from "../types/icomposition.type";
 import { IResult } from "../types/iresult.type";
+const auth = getAuth();
 
 export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: boolean): Promise<string | undefined> => {
-    const auth = getAuth();
-    const user = auth.currentUser;
     let provider;
+    const user = auth.currentUser;
     if (authProvider === 'Google') {
         provider = new GoogleAuthProvider();
     } else if (authProvider === 'Microsoft') {
@@ -31,13 +32,44 @@ export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: bo
     if (!provider || !user) return;
     try {
         if (link) {
-            await linkWithPopup(user, provider);
+            const credential = await linkWithPopup(user, provider);
+            const userDoc = doc(db, 'users/' + credential.user.uid);
+            await updateDoc(userDoc, {
+                displayName: credential.user.displayName,
+                email: credential.user.email,
+                emailVerified: true,
+                provider: credential.providerId
+            })
         } else {
             await unlink(user, provider.providerId)
         }
         return;
     } catch (err: any) {
         return err.message;
+    }
+}
+
+export const updateFirebaseUser = async(displayName: string) : Promise<string | undefined> => {
+    const user = auth.currentUser;
+    if(!user) return;
+    try {
+        await updateProfile(user, {
+            displayName
+        });
+        return;
+    } catch(e: any) {
+        return e.message as string;
+    }
+}
+
+export const removeUser = async() : Promise<string | undefined> => {
+    const user = auth.currentUser;
+    if(!user) return;
+    try {
+        await deleteUser(user);
+        return;
+    } catch(e: any) {
+        return e.message as string;
     }
 }
 
@@ -69,10 +101,10 @@ export const getUserPermissions = async (roles: string[]): Promise<[{ [char: str
                 const rolePermissions: { [char: string]: { view: boolean, create: boolean, edit: boolean, delete: boolean } } = d.data();
                 Object.keys(rolePermissions).forEach(key => {
                     permissions[key] = {
-                        view: permissions.view ? true : rolePermissions[key].view,
-                        create: permissions.create ? true : rolePermissions[key].create,
-                        edit: permissions.edit ? true : rolePermissions[key].edit,
-                        delete: permissions.delete ? true : rolePermissions[key].delete
+                        view: permissions[key]?.view ? true : rolePermissions[key].view,
+                        create: permissions[key]?.create ? true : rolePermissions[key].create,
+                        edit: permissions[key]?.edit ? true : rolePermissions[key].edit,
+                        delete: permissions[key]?.delete ? true : rolePermissions[key].delete
                     }
                 })
             };
@@ -156,7 +188,8 @@ export const getSharedUsers = async (id: string, userId: string): Promise<[Autoc
             return [null, null];
         }
         const labels = snap.docs.map(d => {
-            return { id: d.id, label: d.data().displayName } as AutocompleteOption;
+            const label = d.data().displayName || "Anonymous user";
+            return { id: d.id, label } as AutocompleteOption;
         });
         const ownLabelIndex = labels.findIndex(l => l.id === userId);
         if (ownLabelIndex > -1) labels.splice(ownLabelIndex, 1);

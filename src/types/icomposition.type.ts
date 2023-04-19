@@ -13,6 +13,7 @@ export type IComposition = {
     canCopy?: boolean;
     requireShareApproval?: boolean;
     sharedUsers?: string[];
+    groups?: any[];
     pendingApprovalUsers?: string[];
     // sharedWith?: EntityReference[];
     lastUpdate?: any;
