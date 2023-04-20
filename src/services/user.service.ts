@@ -14,11 +14,12 @@ import {
 import { User, GoogleAuthProvider, OAuthProvider, linkWithPopup, unlink, getAuth, updateProfile, deleteUser } from "firebase/auth";
 import { db } from "./firestore";
 import { SavedDataType } from "../widgets/BST/models/index";
-import { AutocompleteOption } from "../types/autoCompleteOption.type";
+import { AutocompleteOption, UserOrigin } from "../types/autoCompleteOption.type";
 import { EntityStatus } from "firecms";
 import { IUser } from "../types/iuser.type";
 import { IComposition } from "../types/icomposition.type";
 import { IResult } from "../types/iresult.type";
+import { IGroup } from "../types/igroup.type";
 const auth = getAuth();
 
 export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: boolean): Promise<string | undefined> => {
@@ -49,26 +50,26 @@ export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: bo
     }
 }
 
-export const updateFirebaseUser = async(displayName: string) : Promise<string | undefined> => {
+export const updateFirebaseUser = async (displayName: string): Promise<string | undefined> => {
     const user = auth.currentUser;
-    if(!user) return;
+    if (!user) return;
     try {
         await updateProfile(user, {
             displayName
         });
         return;
-    } catch(e: any) {
+    } catch (e: any) {
         return e.message as string;
     }
 }
 
-export const removeUser = async() : Promise<string | undefined> => {
+export const removeUser = async (): Promise<string | undefined> => {
     const user = auth.currentUser;
-    if(!user) return;
+    if (!user) return;
     try {
         await deleteUser(user);
         return;
-    } catch(e: any) {
+    } catch (e: any) {
         return e.message as string;
     }
 }
@@ -179,21 +180,34 @@ const constructUser = (user: User) => {
 
 
 
-export const getSharedUsers = async (id: string, userId: string): Promise<[AutocompleteOption[] | null, string | null]> => {
-    const resultColRef = collection(db, 'results');
-    const resultQuery = query(resultColRef, where('compositions', 'array-contains', id), orderBy('displayName'));
+export const getSharedUsers = async (composition: IComposition): Promise<[AutocompleteOption[] | null, string | null]> => {
     try {
-        const snap = await getDocs(resultQuery);
-        if (snap.empty) {
-            return [null, null];
+        const userIds: UserOrigin[] = composition.sharedUsers?.map(su => { return { id: su, origin: 'shared' } }) || [];
+        for (const ref of composition.groups || []) {
+            const snap = await getDoc(ref);
+            const group = snap.data() as IGroup;
+            group.students?.forEach(student => {
+                if (!userIds.map(u => u.id).includes(student.id)) userIds.push({id: student.id, origin: group.name});
+            })
         }
-        const labels = snap.docs.map(d => {
-            const label = d.data().displayName || "Anonymous user";
-            return { id: d.id, label } as AutocompleteOption;
-        });
-        const ownLabelIndex = labels.findIndex(l => l.id === userId);
-        if (ownLabelIndex > -1) labels.splice(ownLabelIndex, 1);
-        return [labels, null];
+        const limit = 10;
+        const userColRef = collection(db, 'users');
+        const labels: AutocompleteOption[] = [];
+        while (userIds.length) {
+            const usersQuery = query(userColRef, where('uid', 'in', userIds.slice(0, limit).map(u => u.id)));
+            const usersSnap = await getDocs(usersQuery);
+            const batch = usersSnap.docs.map((doc: any) => {
+                
+                const index = userIds.findIndex(u => u.id === doc.id);
+                const origin = index > -1 ? userIds[index].origin : "";
+                const name =  doc.data().displayName || "Anonymous user";
+                const label = name + " (" + origin + ")";
+                return { id: doc.id, label } as AutocompleteOption;
+            });
+            labels.push(...batch);
+            userIds.splice(0, limit);
+        }
+        return [labels.sort((a,b) => {return a.label.localeCompare(b.label)}), null];
     } catch (e: any) {
         return [null, e.message as string];
     }

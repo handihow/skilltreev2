@@ -88,7 +88,7 @@ export function SkillTreeViewer() {
         }
         const [skilltrees, error3] = await getCompositionSkilltrees(id);
         if (error3) return handleError(error3);
-        const [labels, error4] = await getSharedUsers(id, authController.user.uid);
+        const [labels, error4] = await getSharedUsers(composition);
         if (error4) return handleError(error4);
         if (labels?.length) {
             setUsers([...labels]);

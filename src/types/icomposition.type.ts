@@ -1,3 +1,4 @@
+import { DocumentReference } from "firebase/firestore";
 import { SkillThemeType } from "../widgets/BST";
 
 export type IComposition = {
@@ -13,7 +14,7 @@ export type IComposition = {
     canCopy?: boolean;
     requireShareApproval?: boolean;
     sharedUsers?: string[];
-    groups?: any[];
+    groups?: DocumentReference[];
     pendingApprovalUsers?: string[];
     // sharedWith?: EntityReference[];
     lastUpdate?: any;
