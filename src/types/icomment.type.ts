@@ -1,16 +1,14 @@
+import { Timestamp } from "firebase/firestore";
+import { ILabel } from "./ilabel.type";
+
 export type IComment = {
     id?: string;
-    title: string;
-    description?: string,
-    disabled?: boolean;
-    color?: string;
-    editable?: boolean;
-    deletable?: boolean;
-    student?: any;
-    teacher?: any;
+    comment: string;
+    labels?: ("ineedhelp" | "question")[];
+    createdBy?: string;
+    path?: string;
     composition?: any;
     skilltree?: any;
     skill?: any;
-    createdAt?: Date;
-    updatedAt?: Date;
+    createdAt: Timestamp;
   }

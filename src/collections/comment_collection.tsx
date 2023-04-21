@@ -11,8 +11,7 @@ import { IComment } from "../types/icomment.type";
 
 export function buildCommentsCollection(
   view: "edit" | "table",
-  teacherId?: string,
-  studentId?: string,
+  displayName?: string | null | undefined,
   compositionId?: string,
   skilltreeId?: string,
   skillId?: string
@@ -22,15 +21,11 @@ export function buildCommentsCollection(
       values,
       status
     }) => {
-      console.log("I am running")
-      console.log(status, "status")
       if (status === "new") {
-        console.log("I got inside the block")
-        if (!skillId || !studentId || !teacherId || !compositionId || !skilltreeId) throw new Error('Missing necessary information');
+        if (!skillId || !displayName || !compositionId || !skilltreeId) throw new Error('Missing necessary information');
         const [path, error] = await getSkillPath(skillId);
         if (error || !path) throw new Error("Missing path info: " + error);
-        values.student = new EntityReference(studentId, "users");
-        values.teacher = new EntityReference(teacherId, "users");
+        values.createdBy = displayName;
         values.composition = new EntityReference(compositionId, "compositions");
         values.skilltree = new EntityReference(skilltreeId, "compositions/" + compositionId + "/skilltrees");
         const split = path.split("/");
@@ -69,28 +64,19 @@ export function buildCommentsCollection(
       path: "skills",
       previewProperties: ["title"],
       readOnly: true
-    }
-    properties.student = {
-      name: "Student",
-      dataType: "reference",
-      path: "users",
-      previewProperties: ["displayName", "email"],
+    };
+    properties.createdBy = {
+      name: "User",
+      dataType: "string",
       readOnly: true
     };
-    properties.teacher = {
-      name: "Teacher",
-      dataType: "reference",
-      path: "users",
-      previewProperties: ["displayName", "email"],
-      readOnly: true
-    }
     properties.composition = {
       name: "Composition",
       dataType: "reference",
       path: "compositions",
       previewProperties: ["title"],
       readOnly: true
-    }
+    };
   }
 
   properties.createdAt = buildProperty({
@@ -118,8 +104,9 @@ export function buildCommentsCollection(
     defaultSize: "s",
     group: "Comments",
     icon: "Comment",
+    hideIdFromForm: true,
     permissions: ({ authController }) => ({
-      edit: true,
+      edit: false,
       create: true,
       delete: authController.extra?.roles?.includes('super')
     }),

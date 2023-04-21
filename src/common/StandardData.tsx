@@ -151,6 +151,21 @@ export const linkIcons = {
   }
 }
 
+export const commentLabels = {
+  'question': { 
+    id: "question", 
+    type: "question",
+    label: "Question", 
+    color: "blueDark" 
+  },
+  'ineedhelp': { 
+    id: "ineedhelp",
+    type: "ineedhelp",
+    label: "I Need Help", 
+    color: "pinkLight" 
+  }
+}
+
 export const standardSkilltree: ISkilltree = {
   collapsible: true,
   data: standardData,

@@ -36,6 +36,8 @@ import { buildEventsCollection } from "./collections/event_collection";
 import { ShareSkillTreeView } from "./custom_views/ShareSkillTree";
 import { MySchedule } from "./custom_views/MySchedule";
 import { MyGrades } from "./custom_views/MyGrades";
+import { buildCommentsCollection } from "./collections/comment_collection";
+import { SkillTreeComments } from "./custom_views/SkillTreeComments";
 library.add(fas)
 library.add(fab)
 
@@ -93,6 +95,13 @@ const customViews: CMSView[] = [
         view: <ShareSkillTreeView />
     },
     {
+        path: "skills/:id/comments",
+        name: "Comment Skill",
+        hideFromNavigation: true,
+        description: "Skilltree Comments",
+        view: <SkillTreeComments />
+    },
+    {
         path: "share_requests/:id",
         name: "Share requests",
         hideFromNavigation: true,
@@ -144,6 +153,7 @@ export default function App() {
                 evaluationModelCollection, 
                 buildEvaluationsCollection("evaluations"),
                 buildEventsCollection("table"),
+                buildCommentsCollection("table"),
                 organizationCollection,
             ])
         } else if(roles && roles.includes("admin") && organization){
