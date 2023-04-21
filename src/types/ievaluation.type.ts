@@ -8,7 +8,7 @@ export type IEvaluation = {
     repeat?: boolean;
     comment?: string;
     student?: any;
-    teacher?: any;
+    instructor?: any;
     composition?: any;
     skilltree?: any;
     skill?: any;

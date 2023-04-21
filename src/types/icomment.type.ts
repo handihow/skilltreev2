@@ -7,7 +7,7 @@ export type IComment = {
     editable?: boolean;
     deletable?: boolean;
     student?: any;
-    teacher?: any;
+    instructor?: any;
     composition?: any;
     skilltree?: any;
     skill?: any;

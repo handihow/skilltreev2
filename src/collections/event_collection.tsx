@@ -19,7 +19,7 @@ function addHours(date: Date, hours: number) {
 
 export function buildEventsCollection(
     view: "edit" | "table",
-    teacherId?: string,
+    instructorId?: string,
     studentIds?: string[],
     compositionId?: string,
     skilltreeId?: string,
@@ -33,11 +33,11 @@ export function buildEventsCollection(
         }) => {
             // return the updated values
             if (status === "new") {
-                if(!skillId || !studentIds || !teacherId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
+                if(!skillId || !studentIds || !instructorId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
                 const [path, error] = await getSkillPath(skillId);
                 if(error || !path) throw new Error("Missing path info: " + error);
                 values.students = studentIds.map((studentId: string) => new EntityReference(studentId, "users"));
-                values.teacher = new EntityReference(teacherId, "users");
+                values.instructor = new EntityReference(instructorId, "users");
                 values.composition = new EntityReference(compositionId, "compositions");
                 values.skilltree = new EntityReference(skilltreeId, "compositions/" + compositionId + "/skilltrees");
                 values.plannedForGroup = studentIds.length > 1;
@@ -123,7 +123,7 @@ export function buildEventsCollection(
                 readOnly: true
             }
         };
-        properties.teacher = {
+        properties.instructor = {
             name: "Teacher",
             dataType: "reference",
             path: "users",

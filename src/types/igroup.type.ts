@@ -6,6 +6,6 @@ export type IGroup = {
     description?: string;
     period?: string,
     students?: DocumentReference[];
-    teachers?: DocumentReference[];
+    instructors?: DocumentReference[];
     compositions?: DocumentReference[];
 }

@@ -18,7 +18,7 @@ import { IEvaluation } from "../types/ievaluation.type";
 export function buildEvaluationsCollection(
     path: "evaluations" | "history",
     evaluationModel?: IEvaluationModel,
-    teacherId?: string,
+    instructorId?: string,
     studentId?: string,
     compositionId?: string,
     skilltreeId?: string,
@@ -34,11 +34,11 @@ export function buildEvaluationsCollection(
         }) => {
             // return the updated values
             if (status === "new") {
-                if(!skillId || !evaluationModel?.id || !studentId || !teacherId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
+                if(!skillId || !evaluationModel?.id || !studentId || !instructorId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
                 const [path, error] = await getSkillPath(skillId);
                 if(error || !path) throw new Error("Missing path info: " + error);
                 values.student = new EntityReference(studentId, "users");
-                values.teacher = new EntityReference(teacherId, "users");
+                values.instructor = new EntityReference(instructorId, "users");
                 values.composition = new EntityReference(compositionId, "compositions");
                 values.skilltree = new EntityReference(skilltreeId, "compositions/" + compositionId + "/skilltrees");
                 const split = path.split("/");
@@ -173,7 +173,7 @@ export function buildEvaluationsCollection(
             previewProperties: ["displayName", "email"],
             readOnly: true
         };
-        properties.teacher = {
+        properties.instructor = {
             name: "Teacher",
             dataType: "reference",
             path: "users",

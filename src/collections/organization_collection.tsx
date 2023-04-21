@@ -43,7 +43,7 @@ export function buildGroupCollection(organizationId?: string): EntityCollection<
                 },
                 expanded: false
             }),
-            teachers: buildProperty({
+            instructors: buildProperty({
                 name: "Instructors",
                 dataType: "array",
                 of: {

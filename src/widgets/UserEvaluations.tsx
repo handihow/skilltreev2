@@ -1,5 +1,5 @@
 // import React from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, CircularProgress, Typography } from "@mui/material";
 import { useSnackbarController } from "firecms";
 import { SyntheticEvent, useEffect, useState } from "react";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -58,16 +58,17 @@ export function UserEvaluations({ userId, compositionId }: {
             {isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <CircularProgress />
             </div> :
-                <div>
-                    {compositionIds.map(composition =>
-                        <CompositionDetails
-                            compositionId={composition}
-                            userId={userId}
-                            expanded={expanded}
-                            handleChange={handleChange}
-                            key={composition} />
-                    )}
-                </div>
+                compositionIds.length === 0 ? <Card><CardContent><Typography variant="h6">No grades yet</Typography></CardContent></Card> :
+                    <div>
+                        {compositionIds.map(composition =>
+                            <CompositionDetails
+                                compositionId={composition}
+                                userId={userId}
+                                expanded={expanded}
+                                handleChange={handleChange}
+                                key={composition} />
+                        )}
+                    </div>
             }
         </Box>
     );

@@ -149,7 +149,7 @@ export const student = {
     readOnly: true
 }
 
-export const teacher = {
+export const instructor = {
     name: "Teacher",
     dataType: "reference",
     path: "users",

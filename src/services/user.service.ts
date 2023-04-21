@@ -1,4 +1,5 @@
 import {
+    DocumentReference,
     arrayRemove,
     arrayUnion,
     collection,
@@ -178,11 +179,9 @@ const constructUser = (user: User) => {
     return signedInUser;
 };
 
-
-
 export const getSharedUsers = async (composition: IComposition): Promise<[AutocompleteOption[] | null, string | null]> => {
     try {
-        const userIds: UserOrigin[] = composition.sharedUsers?.map(su => { return { id: su, origin: 'shared' } }) || [];
+        const userIds: UserOrigin[] = composition.sharedUsers?.map(su => { return { id: su, origin: '' } }) || [];
         for (const ref of composition.groups || []) {
             const snap = await getDoc(ref);
             const group = snap.data() as IGroup;
@@ -197,11 +196,11 @@ export const getSharedUsers = async (composition: IComposition): Promise<[Autoco
             const usersQuery = query(userColRef, where('uid', 'in', userIds.slice(0, limit).map(u => u.id)));
             const usersSnap = await getDocs(usersQuery);
             const batch = usersSnap.docs.map((doc: any) => {
-                
                 const index = userIds.findIndex(u => u.id === doc.id);
                 const origin = index > -1 ? userIds[index].origin : "";
+                const originAdd = origin ? origin + " - " : ""
                 const name =  doc.data().displayName || "Anonymous user";
-                const label = name + " (" + origin + ")";
+                const label = originAdd + name;
                 return { id: doc.id, label } as AutocompleteOption;
             });
             labels.push(...batch);
@@ -213,6 +212,16 @@ export const getSharedUsers = async (composition: IComposition): Promise<[Autoco
     }
 }
 
+
+export const getStudentGroupReferences = async (userId: string | undefined, organizationId: string | undefined) : Promise<[DocumentReference[], string | null]> => {
+    if(!userId || !organizationId) return [[], "Not enough information to retrieve student groups"];
+    const groupColRef = collection(db, "organizations/" + organizationId + "/groups");
+    const studentRef = doc(db, "users/" + userId);
+    const groupQuery = query(groupColRef, where("students", "array-contains", studentRef));
+    const snap = await getDocs(groupQuery);
+    const refs = snap.docs.map(doc => doc.ref);
+    return [refs, null];
+}
 
 export const saveUserResults = async (userId: string | undefined, treeId: string, compositionId: string | undefined, skills: SavedDataType, progress: number) => {
     if (!userId || !compositionId) return "Not enough information to store results";

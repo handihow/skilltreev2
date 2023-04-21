@@ -6,7 +6,7 @@ import { IEvaluation } from '../types/ievaluation.type';
 import { IEvent } from '../types/ievent.type';
 
 type ViewerSettings = {
-    mode: "editor" | "teacher" | "student" | "initializing", 
+    mode: "editor" | "instructor" | "student" | "initializing", 
     composition: IComposition | null,
     evaluationModel: IEvaluationModel | null,
     selectedUser: AutocompleteOption | null,

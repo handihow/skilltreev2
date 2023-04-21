@@ -61,14 +61,6 @@ const customViews: CMSView[] = [
         icon: "NaturePeople"
     },
     {
-        path: "my-schedule",
-        name: "My Schedule",
-        group: "Content",
-        description: "Your schedule",
-        view: <MySchedule />,
-        icon: "Today"
-    },
-    {
         path: "my-account",
         name: "My Account",
         group: "Account",
@@ -172,6 +164,11 @@ export default function App() {
                 buildAdminCompositionsCollection(organization), 
                 buildUsersCollection("admin", organization),
             ])
+        } else if(roles && roles.includes("instructor") && organization){
+            setCollections([
+                buildEvaluationModelCollection(permissions?.evaluation_models?.view || false), 
+                buildOrganizationCollection(permissions?.organizations?.view || false),
+                buildUsersCollection("instructor", organization)])
         } else {
             setCollections([
                 buildEvaluationModelCollection(permissions?.evaluation_models?.view || false), 
@@ -179,6 +176,14 @@ export default function App() {
         }
         if(roles && roles.includes("student")){
             customViews.push(
+                {
+                    path: "my-schedule",
+                    name: "My Schedule",
+                    group: "Content",
+                    description: "Your schedule",
+                    view: <MySchedule />,
+                    icon: "Today"
+                },
                 {
                     path: "my-grades",
                     name: "My Grades",

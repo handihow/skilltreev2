@@ -177,7 +177,7 @@ export function SkillTreeViewer() {
         sideEntityController.open({
             entityId: selectedUser?.id,
             path: "users",
-            collection: buildUsersCollection("teacher", undefined, composition?.id)
+            collection: buildUsersCollection("instructor", undefined, composition?.id)
         })
     }
 
@@ -200,7 +200,7 @@ export function SkillTreeViewer() {
                 }}>
                 {isLoading ? <CircularProgress /> :
                     <ViewerContext.Provider value={{
-                        mode: isAdmin ? "teacher" : "student",
+                        mode: isAdmin ? "instructor" : "student",
                         composition,
                         evaluationModel,
                         selectedUser,

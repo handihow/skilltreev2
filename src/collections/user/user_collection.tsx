@@ -7,7 +7,7 @@ import { UserEvaluationsView } from "../../custom_entity_view/userEvals";
 import { rolesCollection } from "./role_collection";
 import { updateFirebaseUser } from "../../services/user.service";
 
-export function buildUsersCollection(view: "admin" | "teacher", organization?: string, compositionId?: string): EntityCollection<IUser> {
+export function buildUsersCollection(view: "admin" | "instructor", organization?: string, compositionId?: string): EntityCollection<IUser> {
 
     return buildCollection<IUser>({
         name: "Users",
@@ -19,6 +19,7 @@ export function buildUsersCollection(view: "admin" | "teacher", organization?: s
         alias: compositionId ? compositionId : undefined,
         subcollections: [rolesCollection],
         icon: "Group",
+        hideFromNavigation: view === "instructor",
         inlineEditing: false,
         hideIdFromCollection: true,
         hideIdFromForm: true,

@@ -11,7 +11,7 @@ import { IComment } from "../types/icomment.type";
 
 export function buildCommentsCollection(
   view: "edit" | "table",
-  teacherId?: string,
+  instructorId?: string,
   studentId?: string,
   compositionId?: string,
   skilltreeId?: string,
@@ -23,11 +23,11 @@ export function buildCommentsCollection(
       status
     }) => {
       if (status === "new") {
-        if (!skillId || !studentId || !teacherId || !compositionId || !skilltreeId) throw new Error('Missing necessary information');
+        if (!skillId || !studentId || !instructorId || !compositionId || !skilltreeId) throw new Error('Missing necessary information');
         const [path, error] = await getSkillPath(skillId);
         if (error || !path) throw new Error("Missing path info: " + error);
         values.student = new EntityReference(studentId, "users");
-        values.teacher = new EntityReference(teacherId, "users");
+        values.instructor = new EntityReference(instructorId, "users");
         values.composition = new EntityReference(compositionId, "compositions");
         values.skilltree = new EntityReference(skilltreeId, "compositions/" + compositionId + "/skilltrees");
         const split = path.split("/");
@@ -74,7 +74,7 @@ export function buildCommentsCollection(
       previewProperties: ["displayName", "email"],
       readOnly: true
     };
-    properties.teacher = {
+    properties.instructor = {
       name: "Teacher",
       dataType: "reference",
       path: "users",
