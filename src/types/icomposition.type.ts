@@ -2,7 +2,6 @@ import { DocumentReference } from "firebase/firestore";
 import { SkillThemeType } from "../widgets/BST";
 
 export type IComposition = {
-    studentComposition: boolean;
     id?: string;
     title: string;
     // owner?: EntityReference;
