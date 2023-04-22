@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
-import { useNavigate, useParams } from "react-router";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Button, ButtonGroup, Chip } from '@mui/material';
+import { useNavigate } from "react-router";
+import LinkIcon from '@mui/icons-material/Link';
+import CommentIcon from '@mui/icons-material/Comment';
+import { Button, ButtonGroup, Chip, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack } from '@mui/material';
 import AlertDialog from './AlertDialog';
 import { ViewerContext } from '../context/ViewerContext';
 import { SkillsContext } from '../context/SkillsContext';
@@ -11,9 +12,8 @@ import { skillsCollection } from '../collections/skill_collection';
 import { deleteFromPathRecursively } from '../services/firestore';
 import { CHIP_COLORS } from '../common/StandardData';
 import { buildEventsCollection } from '../collections/event_collection';
-import { convertToDateTimeString, isGradedSkill } from '../common/StandardFunctions';
+import { convertToDateTimeString, formatTimeAgo, isGradedSkill } from '../common/StandardFunctions';
 import { EvaluationResultViewer } from './EvaluationResultViewer';
-import { buildCommentsCollection } from '../collections/comment_collection';
 
 export default function SkillContent(props: {
     id: string;
@@ -49,7 +49,7 @@ export default function SkillContent(props: {
     const colorOfEvent = event?.color ? event.color : "blueDark";
     const eventColor = CHIP_COLORS[colorOfEvent].color;
     const eventText = CHIP_COLORS[colorOfEvent].text;
-    const eventDate = event ? event.start.toDate(): new Date();
+    const eventDate = event ? event.start.toDate() : new Date();
     const evaluation = content.evaluations.find(e => e.skill.id === props.id);
 
     // const [isGraded,evaluation, gradeChip] = processGradeChip(content.composition, skill, content.evaluations, content.evaluationModel);
@@ -93,7 +93,7 @@ export default function SkillContent(props: {
                         skill?.skilltree, skill?.id,
                         skill?.title
                     )
-                    
+
                 });
                 break;
             default:
@@ -124,24 +124,26 @@ export default function SkillContent(props: {
 
     return (
         <React.Fragment>
-            {props.optional && <Chip label="optional" variant="filled" color="primary" sx={{ marginBottom: 3 }} />}
-            {isGradedSkill(content.composition, skill) && <EvaluationResultViewer evaluation={evaluation} evaluationModel={content.evaluationModel} viewAsChip={true} / >}
-            {canSchedule && event && <Chip label={"Due " + convertToDateTimeString(eventDate)} variant="filled" sx={{ backgroundColor: eventColor, color: eventText, marginBottom: 3 }}/>}
+            <Stack direction="row" spacing={1}>
+                {props.optional && <Chip label="optional" variant="filled" color="primary" sx={{ marginBottom: 3 }} />}
+                {isGradedSkill(content.composition, skill) && <EvaluationResultViewer evaluation={evaluation} evaluationModel={content.evaluationModel} viewAsChip={true} />}
+                {canSchedule && event && <Chip label={formatTimeAgo(eventDate)} variant="filled" sx={{ backgroundColor: eventColor, color: eventText }} />}
+            </Stack>
             <div
                 dangerouslySetInnerHTML={{ __html: props.description }}
             />
-            {canViewLinks && <ul style={{ listStyleType: 'none', marginTop: '10px' }}>
+            {canViewLinks && <List>
                 {props.links.map((link) => (
-                    <li key={link.id}>
-                        <a href={link.reference} target="_blank" rel="noopener noreferrer">
-                            <span style={{ marginRight: '10px' }}>
-                                <FontAwesomeIcon icon={[link.iconPrefix, link.iconName]} />
-                            </span>
-                            {link.title}
-                        </a>
-                    </li>
+                    <ListItem key={link.id} disablePadding>
+                        <ListItemButton component="a" href={link.reference} target="_blank" rel="noopener noreferrer">
+                            <ListItemIcon color="secondary">
+                                <LinkIcon />
+                            </ListItemIcon>
+                            <ListItemText primary={link.title} />
+                        </ListItemButton>
+                    </ListItem>
                 ))}
-            </ul>}
+            </List>}
             {content.mode === "editor" &&
                 <ButtonGroup variant="contained" size="small" aria-label="contained small button group">
                     <Button aria-label="edit" onClick={() => openSkillController("edit")} color="primary">
@@ -163,20 +165,17 @@ export default function SkillContent(props: {
                     ></AlertDialog>
                 </ButtonGroup>
             }
-            {content.mode === "instructor" &&
+            {content.mode !== "editor" &&
                 <ButtonGroup variant="contained" size="small" aria-label="contained small button group">
-                    {isGradedSkill(content.composition, skill) && <Button aria-label="grade" onClick={gradeSkill} color="primary">
+                    {content.mode === "instructor" && isGradedSkill(content.composition, skill) && <Button aria-label="grade" onClick={gradeSkill} color="primary">
                         +grade
                     </Button>}
-                    {canSchedule && <Button aria-label="feedback" onClick={() => openSkillController("todo")} color="success">
+                    {content.mode === "instructor" && (canSchedule || isGradedSkill(content.composition, skill)) && <Button aria-label="feedback" onClick={() => openSkillController("todo")} color="success">
                         +todo
                     </Button>}
+                    <Button aria-label='comment' onClick={navigateToComments} color="success">+comment</Button>
                 </ButtonGroup>
-            }
-            {content.mode !== "editor" &&
-                    <ButtonGroup sx={{ position: "absolute", left: "70%", marginBottom: "1.2rem"}} variant="contained" size="small" aria-label="contained small button group">
-                        <Button aria-label='comment' onClick={navigateToComments}>Comment</Button>
-                    </ButtonGroup>
+
             }
         </React.Fragment>
     )

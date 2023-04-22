@@ -160,7 +160,6 @@ export default function App() {
                 buildEvaluationsCollection("evaluations"),
                 buildEventsCollection("table"),
                 buildCommentsCollection("table"),
-                organizationCollection,
                 buildGroupCollection(organization),
                 buildOrganizationCollection(permissions?.organizations?.view || false),
                 permissionsCollection,
