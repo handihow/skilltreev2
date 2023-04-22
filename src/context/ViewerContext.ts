@@ -4,7 +4,6 @@ import { IComposition } from '../types/icomposition.type';
 import { IEvaluationModel } from '../types/ievaluation.model.type';
 import { IEvaluation } from '../types/ievaluation.type';
 import { IEvent } from '../types/ievent.type';
-import { ILabel } from '../types/ilabel.type';
 
 type ViewerSettings = {
     mode: "editor" | "instructor" | "student" | "initializing", 
@@ -13,8 +12,7 @@ type ViewerSettings = {
     selectedUser: AutocompleteOption | null,
     users: AutocompleteOption[],
     evaluations: IEvaluation[],
-    events: IEvent[],
-    labels: ILabel[]
+    events: IEvent[]
 }
 
 export const ViewerContext = createContext<ViewerSettings>({
@@ -24,6 +22,5 @@ export const ViewerContext = createContext<ViewerSettings>({
     selectedUser: null,
     users: [],
     evaluations: [],
-    events: [],
-    labels: []
+    events: []
 });

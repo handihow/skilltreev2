@@ -1,7 +1,6 @@
-import { Chip, Typography, capitalize } from "@mui/material";
+import { Chip, Typography } from "@mui/material";
 import { CHIP_COLORS, commentLabels } from "../common/StandardData";
 import { InfoChip } from "../types/infoChip.type";
-import { ILabel } from "../types/ilabel.type";
 
 export function CommentLabelViewer({
   viewAsChip,
@@ -31,8 +30,8 @@ export function CommentLabelViewer({
 
   return (
     labelChip.label ?
-    viewAsChip ?
-    <Chip label={labelChip.label} variant="filled" size="small" sx={{ backgroundColor: labelChip.bgColor, color: labelChip.color}}/> :
-    <Typography component="span" variant="caption" sx={{ backgroundColor: labelChip.bgColor, color: labelChip.color, borderRadius: "25px", padding: "3px 15px"}}>{labelChip.label}</Typography> : <span></span>
+      viewAsChip ?
+        <Chip label={labelChip.label} variant="filled" size="small" sx={{ backgroundColor: labelChip.bgColor, color: labelChip.color }} /> :
+        <Typography component="span" variant="caption" sx={{ backgroundColor: labelChip.bgColor, color: labelChip.color, borderRadius: "25px", padding: "3px 15px" }}>{labelChip.label}</Typography> : <span></span>
   )
 }

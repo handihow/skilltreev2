@@ -1,5 +1,4 @@
 import { Timestamp } from "firebase/firestore";
-import { ILabel } from "./ilabel.type";
 
 export type IComment = {
     id?: string;
