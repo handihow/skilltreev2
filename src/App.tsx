@@ -36,6 +36,9 @@ import { buildEventsCollection } from "./collections/event_collection";
 import { ShareSkillTreeView } from "./custom_views/ShareSkillTree";
 import { MySchedule } from "./custom_views/MySchedule";
 import { MyGrades } from "./custom_views/MyGrades";
+
+import { buildCommentsCollection } from "./collections/comment_collection";
+import { SkillTreeComments } from "./custom_views/SkillTreeComments";
 import { MyAccount } from "./custom_views/MyAccount";
 import { permissionsCollection } from "./collections/permission_collection";
 import { CustomLoginView } from "./custom_views/CustomLoginView";
@@ -97,6 +100,13 @@ const customViews: CMSView[] = [
         view: <ShareSkillTreeView />
     },
     {
+        path: "skills/:id/comments",
+        name: "Comment Skill",
+        hideFromNavigation: true,
+        description: "Skilltree Comments",
+        view: <SkillTreeComments />
+    },
+    {
         path: "share_requests/:id",
         name: "Share requests",
         hideFromNavigation: true,
@@ -149,6 +159,8 @@ export default function App() {
                 buildEvaluationModelCollection(true), 
                 buildEvaluationsCollection("evaluations"),
                 buildEventsCollection("table"),
+                buildCommentsCollection("table"),
+                organizationCollection,
                 buildGroupCollection(organization),
                 buildOrganizationCollection(permissions?.organizations?.view || false),
                 permissionsCollection,

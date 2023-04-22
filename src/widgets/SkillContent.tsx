@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { useNavigate, useParams } from "react-router";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button, ButtonGroup, Chip } from '@mui/material';
 import AlertDialog from './AlertDialog';
@@ -12,6 +13,7 @@ import { CHIP_COLORS } from '../common/StandardData';
 import { buildEventsCollection } from '../collections/event_collection';
 import { convertToDateTimeString, isGradedSkill } from '../common/StandardFunctions';
 import { EvaluationResultViewer } from './EvaluationResultViewer';
+import { buildCommentsCollection } from '../collections/comment_collection';
 
 export default function SkillContent(props: {
     id: string;
@@ -24,6 +26,11 @@ export default function SkillContent(props: {
     const snackbarController = useSnackbarController();
     const sideEntityController = useSideEntityController();
     const authController = useAuthController();
+
+    const navigate = useNavigate();
+    const navigateToComments = () => {
+        navigate("/skills/" + props.id + "/comments");
+    }
 
     const handleError = (error: string) => {
         snackbarController.open({
@@ -86,7 +93,9 @@ export default function SkillContent(props: {
                         skill?.skilltree, skill?.id,
                         skill?.title
                     )
-                })
+                    
+                });
+                break;
             default:
                 break;
         }
@@ -163,6 +172,11 @@ export default function SkillContent(props: {
                         +todo
                     </Button>}
                 </ButtonGroup>
+            }
+            {content.mode !== "editor" &&
+                    <ButtonGroup sx={{ position: "absolute", left: "70%", marginBottom: "1.2rem"}} variant="contained" size="small" aria-label="contained small button group">
+                        <Button aria-label='comment' onClick={navigateToComments}>Comment</Button>
+                    </ButtonGroup>
             }
         </React.Fragment>
     )
