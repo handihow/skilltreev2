@@ -2,6 +2,7 @@ import { DocumentReference } from "firebase/firestore";
 import { SkillThemeType } from "../widgets/BST";
 
 export type IComposition = {
+    studentComposition: boolean;
     id?: string;
     title: string;
     // owner?: EntityReference;
@@ -22,5 +23,6 @@ export type IComposition = {
     evaluationModel?: any;
     gradeAllSkillsByDefault?: boolean;
     pendingApproval?: boolean;
+    isGroupStudent?: boolean;
     createdAt?: Date;
 }

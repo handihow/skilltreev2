@@ -48,6 +48,14 @@ library.add(fab)
 
 const customViews: CMSView[] = [
     {
+        path: "my-account",
+        name: "My Account",
+        group: "Account",
+        description: "Your account",
+        view: <MyAccount />,
+        icon: "AccountCircle"
+    },
+    {
         path: "own-skilltrees",
         name: "My SkillTrees",
         group: "Content",
@@ -62,14 +70,6 @@ const customViews: CMSView[] = [
         description: "SkillTrees shared with you",
         view: <MySkillTreesView view={"shared"} />,
         icon: "NaturePeople"
-    },
-    {
-        path: "my-account",
-        name: "My Account",
-        group: "Account",
-        description: "Your account",
-        view: <MyAccount />,
-        icon: "AccountCircle"
     },
     {
         path: "compositions/:id/viewer",
@@ -186,6 +186,8 @@ export default function App() {
                 buildOrganizationCollection(permissions?.organizations?.view || false)])
         }
         if(roles && roles.includes("student")){
+            customViews.shift();
+            customViews.shift(); 
             customViews.push(
                 {
                     path: "my-schedule",
@@ -198,7 +200,7 @@ export default function App() {
                 {
                     path: "my-grades",
                     name: "My Grades",
-                    group: "Grades",
+                    group: "Content",
                     description: "Your grades",
                     view: <MyGrades />,
                     icon: "Grading"
@@ -219,7 +221,7 @@ export default function App() {
         toolbarExtraWidget={ToolbarExtraWidget()}
         logo="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTreeIcon.png?alt=media&token=af824f13-6bfd-46f9-9ec8-35ff020e95c6"
         logoDark="https://firebasestorage.googleapis.com/v0/b/skilltree-b6bba.appspot.com/o/assets%2FSkillTree_T_icon.png?alt=media&token=06b80792-f01a-4cfc-9de4-0f89f6d1b3c0"
-        primaryColor="#27405f"
+        // primaryColor="#27405f"
         secondaryColor="#fffff"
         fontFamily="Nunito"
     />;

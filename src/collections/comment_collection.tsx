@@ -41,7 +41,7 @@ export function buildCommentsCollection(
       name: "Comment",
       dataType: "string",
       validation: { required: true },
-      markdown: true,
+      multiline: true,
       description: "Write something here that describes your problem"
     },
     labels: {

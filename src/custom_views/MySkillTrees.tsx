@@ -10,7 +10,8 @@ import {
     CircularProgress,
     Container,
     Grid,
-    Typography
+    Typography,
+    Tooltip
 } from "@mui/material";
 
 import {
@@ -109,12 +110,13 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                     } else {
                         composition.url = "https://via.placeholder.com/360x254.png?text=Skilltree"
                     }
+                    composition.isGroupStudent = initializer === "student";
                     composition.pendingApproval = initializer === "pending";
                     compositions.push(composition);
                 }
                 if (initializer === "pending") {
                     setPendingApprovalList(compositions || []);
-                } else if(initializer === "student") {
+                } else if (initializer === "student") {
                     setGroupList(compositions || []);
                 } else {
                     setCompositionList(compositions || []);
@@ -237,26 +239,41 @@ export function MySkillTreesView({ view }: { view: "owned" | "shared" }) {
                                             {composition.pendingApproval && <Typography component="div">Pending approval</Typography>}
                                         </CardContent>
                                         <CardActions>
-                                            {<IconButton onClick={() => navigateToSkillTree(composition.id || '', "viewer")} disabled={composition.pendingApproval}>
-                                                <PreviewIcon />
-                                            </IconButton>}
-                                            {view === "owned" && <IconButton onClick={() => navigateToSkillTree(composition.id || '', "editor")}>
-                                                <EditIcon />
-                                            </IconButton>}
-                                            {(view === "owned" || composition.canCopy) && <IconButton onClick={() => copy({ id: composition.id || '' })}>
-                                                <ContentCopyIcon />
-                                            </IconButton>}
-                                            {(view === "owned") && <IconButton onClick={() => navigateToSkillTree(composition.id || '', "share")}>
-                                                <ShareIcon />
-                                            </IconButton>}
-                                            <AlertDialog
+                                            {<Tooltip
+                                                title="SkillTree Viewer">
+                                                <IconButton onClick={() => navigateToSkillTree(composition.id || '', "viewer")} disabled={composition.pendingApproval}>
+                                                    <PreviewIcon />
+                                                </IconButton>
+                                            </Tooltip>}
+                                            {view === "owned" &&
+                                                <Tooltip
+                                                    title="SkillTree Editor">
+                                                    <IconButton onClick={() => navigateToSkillTree(composition.id || '', "editor")}>
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>}
+                                            {(view === "owned" || composition.canCopy) &&
+                                                <Tooltip
+                                                    title="Copy SkillTree">
+                                                    <IconButton onClick={() => copy({ id: composition.id || '' })}>
+                                                        <ContentCopyIcon />
+                                                    </IconButton>
+                                                </Tooltip>}
+                                            {(view === "owned") &&
+                                                <Tooltip
+                                                    title="Share SkillTree">
+                                                    <IconButton onClick={() => navigateToSkillTree(composition.id || '', "share")}>
+                                                        <ShareIcon />
+                                                    </IconButton>
+                                                </Tooltip>}
+                                            {!composition.isGroupStudent && <AlertDialog
                                                 agreeFunction={view === "owned" ? del : removeSharedComposition}
                                                 functionParams={{ id: composition?.id || "", pendingApproval: composition.pendingApproval }}
                                                 agreeBtnText="Yes, delete!"
                                                 openBtnText="icon"
                                                 alertWarning="Are you sure that you want to delete?"
                                                 btnColor="error"
-                                            />
+                                            />}
                                         </CardActions>
                                     </Card>
                                 </Grid>
