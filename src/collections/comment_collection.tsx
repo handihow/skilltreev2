@@ -105,12 +105,13 @@ export function buildCommentsCollection(
     group: "Comments",
     icon: "Comment",
     hideIdFromForm: true,
-    permissions: ({ authController }) => ({
-      edit: false,
-      create: true,
-      delete: authController.extra?.roles?.includes('super')
-    }),
     properties,
+    permissions: ({ authController }) => ({
+      edit: authController.extra?.permissions.comments.edit,
+      create: authController.extra?.permissions.comments.create,
+      // we have created the roles object in the navigation builder
+      delete: authController.extra?.permissions.comments.delete
+    }),
     callbacks: commentCallbacks
   })
 }

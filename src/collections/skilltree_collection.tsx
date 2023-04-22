@@ -1,5 +1,5 @@
 import {
-    buildCollection, buildEntityCallbacks, buildProperty, EntityOnDeleteProps, EntityOnSaveProps,
+    buildCollection, buildEntityCallbacks, buildProperty, EntityCollection, EntityOnDeleteProps, EntityOnSaveProps,
 } from "firecms";
 import { getCountFromPath } from "../services/firestore";
 import { skillsCollectionWithSubcollections } from "./skill_collection";
@@ -28,81 +28,85 @@ const skilltreeCallbacks = buildEntityCallbacks({
     }: EntityOnDeleteProps<ISkilltree>
     ) => {
         const error = await deleteSkillsOfSkilltree(entityId);
-        if(error) throw new Error(error);
+        if (error) throw new Error(error);
     },
     onSaveSuccess: async (props: EntityOnSaveProps<ISkilltree>) => {
-        if(props.status === "new") {
+        if (props.status === "new") {
             const split = props.path.split("/");
             const compositionId = split.length ? split[1] : "";
             const error = await createSkilltreeSkills(props.entityId || "", compositionId, false);
-            if(error) props.context.snackbarController.open({type: "error", message: error});
+            if (error) props.context.snackbarController.open({ type: "error", message: error });
         }
     },
 });
 
-
-export const skilltreesCollection = buildCollection<ISkilltree>({
-    name: "Trees",
-    singularName: "Tree",
-    path: "skilltrees",
-    initialSort: ["order", "asc"],
-    permissions: ({ authController }) => {
-        const isStudent = authController.extra?.roles.includes("student");
-        return ({
-            edit: !isStudent,
-            create: !isStudent,
-            // we have created the roles object in the navigation builder
-            delete: !isStudent
-        })
-    },
-    Actions: [MoveDownAction, MoveUpAction],
-    subcollections: [
-        skillsCollectionWithSubcollections
-    ],
-    inlineEditing: false,
-    defaultSize: "s",
-    properties: {
-        title: {
-            name: "Title",
-            validation: { required: true },
-            dataType: "string"
-        },
-        description: {
-            name: "Description",
-            dataType: "string"
-        },
-        collapsible: {
-            name: "Collapsible",
-            dataType: "boolean",
-            defaultValue: true
-        },
-        closedByDefault: {
-            name: "Closed by default",
-            dataType: "boolean",
-            defaultValue: false
-        },
-        disabled: {
-            name: "Disabled",
-            dataType: "boolean",
-            defaultValue: false
-        },
-        order: {
-            name: "Order",
-            dataType: "number",
-            readOnly: true
-        },
-        createdAt: buildProperty({
-            dataType: "date",
-            name: "Created at",
-            autoValue: "on_create",
-            readOnly: true
+export function buildSkilltreesCollection(withSubCollections: boolean): EntityCollection<ISkilltree> {
+    const subcollections = withSubCollections ? [skillsCollectionWithSubcollections] : [];
+    return buildCollection<ISkilltree>({
+        name: "Trees",
+        singularName: "Tree",
+        path: "skilltrees",
+        initialSort: ["order", "asc"],
+        permissions: ({ authController }) => ({
+            edit: authController.extra?.permissions.compositions.edit,
+            create: authController.extra?.permissions.compositions.create,
+            delete: authController.extra?.permissions.compositions.delete
         }),
-        updatedAt: buildProperty({
-            dataType: "date",
-            name: "Updated at",
-            autoValue: "on_update",
-            readOnly: true
-        })
-    },
-    callbacks: skilltreeCallbacks
-});
+        Actions: [MoveDownAction, MoveUpAction],
+        subcollections,
+        inlineEditing: false,
+        hideIdFromCollection: true,
+        hideIdFromForm: true,
+        defaultSize: "s",
+        properties: {
+            title: {
+                name: "Title",
+                validation: { required: true },
+                dataType: "string"
+            },
+            description: {
+                name: "Description",
+                dataType: "string"
+            },
+            collapsible: {
+                name: "Collapsible",
+                dataType: "boolean",
+                defaultValue: true
+            },
+            closedByDefault: {
+                name: "Closed by default",
+                dataType: "boolean",
+                defaultValue: false
+            },
+            disabled: {
+                name: "Disabled",
+                dataType: "boolean",
+                defaultValue: false
+            },
+            order: {
+                name: "Order",
+                dataType: "number",
+                disabled: {
+                    hidden: true
+                }
+            },
+            createdAt: buildProperty({
+                dataType: "date",
+                name: "Created at",
+                autoValue: "on_create",
+                disabled: {
+                    hidden: true
+                }
+            }),
+            updatedAt: buildProperty({
+                dataType: "date",
+                name: "Updated at",
+                autoValue: "on_update",
+                disabled: {
+                    hidden: true
+                }
+            })
+        },
+        callbacks: skilltreeCallbacks
+    })
+};

@@ -18,11 +18,11 @@ export const getUserEvents = async (userId: string): Promise<[IEvent[] | [], str
     }
 }
 
-export const addEvent = async (processedEvent: ProcessedEvent, compositionId: string, studentIds: string[], teacherId: string): Promise<[ProcessedEvent | null, string | null]> => {
+export const addEvent = async (processedEvent: ProcessedEvent, compositionId: string, studentIds: string[], instructorId: string): Promise<[ProcessedEvent | null, string | null]> => {
     const eventColl = collection(db, 'events');
     const compositionDoc = compositionId.length > 0 ? doc(db, "compositions/" + compositionId) : null;
     const studentDocs = studentIds.map((studentId: string) => doc(db, "users/" + studentId));
-    const teacherDoc = doc(db, "users/" + teacherId);
+    const instructorDoc = doc(db, "users/" + instructorId);
     try {
         const docRef = await addDoc(eventColl, {
             title: processedEvent.title,
@@ -32,7 +32,7 @@ export const addEvent = async (processedEvent: ProcessedEvent, compositionId: st
             updatedAt: Timestamp.now(),
             composition: compositionDoc,
             students: studentDocs,
-            teacher: teacherDoc,
+            instructor: instructorDoc,
             plannedForGroup: studentDocs.length > 1
         });
         const processed: ProcessedEvent = {

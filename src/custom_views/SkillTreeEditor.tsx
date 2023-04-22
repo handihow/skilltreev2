@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-    SkillTreeGroup,
-    SkillProvider,
-} from "beautiful-skill-tree";
+
 import {
     Box,
     Card,
@@ -26,8 +23,8 @@ import {
     useAuthController, useSideEntityController, useSnackbarController, useStorageSource,
 } from "firecms";
 import { db, deleteFromPathRecursively } from '../services/firestore';
-import { buildCompositionsCollection } from "../collections/composition_collection";
-import { skilltreesCollection } from "../collections/skilltree_collection";
+import { buildAdminCompositionsCollection, buildTeacherCompositionsCollection } from "../collections/composition/composition_collection";
+import { buildSkilltreesCollection } from "../collections/skilltree_collection";
 import { useNavigate, useParams } from "react-router";
 import { collection, doc, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Unsubscribe } from "firebase/auth";
@@ -37,6 +34,7 @@ import { IComposition } from "../types/icomposition.type";
 import { ISkilltree } from "../types/iskilltree.type";
 import AlertDialog from "../widgets/AlertDialog";
 import { SkillTreeWidget } from "../widgets/SkillTreeWidget";
+import { SkillProvider, SkillTreeGroup } from "../widgets/BST";
 
 export function SkillTreeEditor() {
     // hook to display custom snackbars
@@ -123,10 +121,12 @@ export function SkillTreeEditor() {
     }, [])
 
     const openSideController = (simple: boolean) => {
+        const isAdmin = authController.extra?.roles.includes("admin") || authController.extra?.roles.includes("super");
+        const collection = isAdmin ? buildAdminCompositionsCollection(authController.extra?.organization) : buildTeacherCompositionsCollection(simple, authController.extra?.organization);
         sideEntityController.open({
             entityId: composition?.id,
             path: "compositions",
-            collection: buildCompositionsCollection(simple, authController.extra?.organization),
+            collection
         })
     }
 
@@ -134,7 +134,7 @@ export function SkillTreeEditor() {
         sideEntityController.open({
             entityId: id,
             path: "compositions/" + composition?.id + "/skilltrees",
-            collection: skilltreesCollection
+            collection: buildSkilltreesCollection(false)
         })
     }
 

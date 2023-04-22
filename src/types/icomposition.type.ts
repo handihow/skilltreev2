@@ -1,4 +1,5 @@
-import { SkillThemeType } from "beautiful-skill-tree";
+import { DocumentReference } from "firebase/firestore";
+import { SkillThemeType } from "../widgets/BST";
 
 export type IComposition = {
     id?: string;
@@ -13,6 +14,7 @@ export type IComposition = {
     canCopy?: boolean;
     requireShareApproval?: boolean;
     sharedUsers?: string[];
+    groups?: DocumentReference[];
     pendingApprovalUsers?: string[];
     // sharedWith?: EntityReference[];
     lastUpdate?: any;

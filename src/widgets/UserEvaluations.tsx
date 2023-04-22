@@ -1,12 +1,10 @@
 // import React from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, CircularProgress, Typography } from "@mui/material";
 import { useSnackbarController } from "firecms";
 import { SyntheticEvent, useEffect, useState } from "react";
-import { getUserResults } from "../services/user.service";
-import { IResult } from "../types/iresult.type";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { IComposition } from "../types/icomposition.type";
-import { getComposition, getCompositionSkillCount, getCompositionSkilltrees } from "../services/composition.service";
+import { getComposition, getCompositionSkillCount, getCompositionSkilltrees, getSharedCompositionIds } from "../services/composition.service";
 import { ISkill } from "../types/iskill.type";
 import { IEvaluation } from "../types/ievaluation.type";
 import { getCompositionEvaluations, getEvaluationModel } from "../services/evaluation.service";
@@ -25,7 +23,7 @@ export function UserEvaluations({ userId, compositionId }: {
 
     const snackbarController = useSnackbarController();
     const [isLoading, setIsLoading] = useState(true);
-    const [result, setResult] = useState<IResult | null>(null);
+    const [compositionIds, setCompositionIds] = useState<string[]>([]);
     const [expanded, setExpanded] = useState<string | false>(false);
 
     const handleChange =
@@ -42,9 +40,9 @@ export function UserEvaluations({ userId, compositionId }: {
     }
 
     const initialize = async () => {
-        const [result, error] = await getUserResults(userId);
+        const [ids, error] = await getSharedCompositionIds(userId);
         if (error) handleError(error);
-        setResult(result);
+        setCompositionIds(ids);
         setIsLoading(false);
         if (compositionId) handleChange(compositionId);
     }
@@ -54,28 +52,24 @@ export function UserEvaluations({ userId, compositionId }: {
     }, []);
 
     return (
-        <Box
-            display="flex"
-            width={"100%"}
-            height={"100%"}>
 
 
-                <Box p={1}>
-                    {isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <CircularProgress />
-                    </div> :
-                        <div>
-                            {result?.compositions.map(composition =>
-                                <CompositionDetails
-                                    compositionId={composition}
-                                    userId={userId}
-                                    expanded={expanded}
-                                    handleChange={handleChange}
-                                    key={composition} />
-                            )}
-                        </div>
-                    }
-                </Box>
+        <Box p={1}>
+            {isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress />
+            </div> :
+                compositionIds.length === 0 ? <Card><CardContent><Typography variant="h6">No grades yet</Typography></CardContent></Card> :
+                    <div>
+                        {compositionIds.map(composition =>
+                            <CompositionDetails
+                                compositionId={composition}
+                                userId={userId}
+                                expanded={expanded}
+                                handleChange={handleChange}
+                                key={composition} />
+                        )}
+                    </div>
+            }
         </Box>
     );
 
@@ -126,31 +120,31 @@ function CompositionDetails({ compositionId, userId, expanded, handleChange }: {
 
     return (
         composition && !isLoading ?
-        <Accordion expanded={expanded === compositionId} onChange={handleChange(compositionId)} key={compositionId}>
-            <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1bh-content"
-                id={"panel1bh-header-" + compositionId}
-            >
-                <Typography sx={{ width: '55%', flexShrink: 0 }}>
-                    {composition?.title}
-                </Typography>
-                <Box sx={{ width: '30%' }}>{evaluationModel && <EvaluationResultViewer
-                    evaluation={calculateAverageGrade(evaluations, skills, evaluationModel)}
-                    evaluationModel={evaluationModel}
-                    viewAsChip={true} />}</Box>
+            <Accordion expanded={expanded === compositionId} onChange={handleChange(compositionId)} key={compositionId}>
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1bh-content"
+                    id={"panel1bh-header-" + compositionId}
+                >
+                    <Typography sx={{ width: '65%', flexShrink: 0 }}>
+                        {composition?.title}
+                    </Typography>
+                    <Box sx={{ width: '25%' }}>{evaluationModel && <EvaluationResultViewer
+                        evaluation={calculateAverageGrade(evaluations, skills, evaluationModel)}
+                        evaluationModel={evaluationModel}
+                        viewAsChip={true} />}</Box>
 
-                <CircularProgressWithLabel value={Math.round(completedCount / skillCount * 100)} />
-            </AccordionSummary>
-            <AccordionDetails>
-                {expanded === compositionId ?
-                    <CompositionResults composition={composition} skills={skills} evaluations={evaluations} evaluationModel={evaluationModel} /> : <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <CircularProgress />
-                    </div>}
-            </AccordionDetails>
-        </Accordion> : isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <CircularProgress />
-                    </div> : <div></div>
+                    <CircularProgressWithLabel value={Math.round(completedCount / skillCount * 100)} />
+                </AccordionSummary>
+                <AccordionDetails>
+                    {expanded === compositionId ?
+                        <CompositionResults composition={composition} skills={skills} evaluations={evaluations} evaluationModel={evaluationModel} /> : <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <CircularProgress />
+                        </div>}
+                </AccordionDetails>
+            </Accordion> : isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress />
+            </div> : <div></div>
 
     )
 }
@@ -213,7 +207,7 @@ function CompositionResults({
         isLoading ? <div style={{ display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />
         </div> :
-            <Box sx={{ height: 270, flexGrow: 1, maxWidth: 400, overflowY: 'auto' }} key={composition.id}>
+            <Box sx={{ height: 270, flexGrow: 1, overflowY: 'auto' }} key={composition.id}>
                 <Box sx={{ mb: 1 }}>
                     <Button onClick={handleExpandClick}>
                         {expanded.length === 0 ? 'Expand all' : 'Collapse all'}

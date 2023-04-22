@@ -1,4 +1,5 @@
 import {
+    DocumentReference,
     arrayRemove,
     arrayUnion,
     collection,
@@ -8,22 +9,77 @@ import {
     orderBy,
     query,
     setDoc,
+    updateDoc,
     where,
 } from "firebase/firestore";
-import { User } from "firebase/auth";
+import { User, GoogleAuthProvider, OAuthProvider, linkWithPopup, unlink, getAuth, updateProfile, deleteUser } from "firebase/auth";
 import { db } from "./firestore";
-import { SavedDataType } from "beautiful-skill-tree";
-import { AutocompleteOption } from "../types/autoCompleteOption.type";
+import { SavedDataType } from "../widgets/BST/models/index";
+import { AutocompleteOption, UserOrigin } from "../types/autoCompleteOption.type";
 import { EntityStatus } from "firecms";
 import { IUser } from "../types/iuser.type";
 import { IComposition } from "../types/icomposition.type";
 import { IResult } from "../types/iresult.type";
+import { IGroup } from "../types/igroup.type";
+const auth = getAuth();
+
+export const linkAccount = async (authProvider: 'Google' | 'Microsoft', link: boolean): Promise<string | undefined> => {
+    let provider;
+    const user = auth.currentUser;
+    if (authProvider === 'Google') {
+        provider = new GoogleAuthProvider();
+    } else if (authProvider === 'Microsoft') {
+        provider = new OAuthProvider('microsoft.com');
+    }
+    if (!provider || !user) return;
+    try {
+        if (link) {
+            const credential = await linkWithPopup(user, provider);
+            const userDoc = doc(db, 'users/' + credential.user.uid);
+            await updateDoc(userDoc, {
+                displayName: credential.user.displayName,
+                email: credential.user.email,
+                emailVerified: true,
+                provider: credential.providerId
+            })
+        } else {
+            await unlink(user, provider.providerId)
+        }
+        return;
+    } catch (err: any) {
+        return err.message;
+    }
+}
+
+export const updateFirebaseUser = async (displayName: string): Promise<string | undefined> => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+        await updateProfile(user, {
+            displayName
+        });
+        return;
+    } catch (e: any) {
+        return e.message as string;
+    }
+}
+
+export const removeUser = async (): Promise<string | undefined> => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+        await deleteUser(user);
+        return;
+    } catch (e: any) {
+        return e.message as string;
+    }
+}
 
 export const getUserRoles = async (userId: string): Promise<[string[] | null, string | null]> => {
     const userRolesRef = collection(db, 'users/' + userId + '/roles')
     try {
         const snap = await getDocs(userRolesRef);
-        if (snap.empty) return [[], "No user roles found"]
+        if (snap.empty) return [["instructor"], null]
         const roles = snap.docs.map(d => {
             if (d.data().hasRole) {
                 return d.id
@@ -34,6 +90,30 @@ export const getUserRoles = async (userId: string): Promise<[string[] | null, st
         return [roles, null];
     } catch (err: any) {
         return [[], "Error while retrieving user roles" + err.message]
+    }
+}
+
+export const getUserPermissions = async (roles: string[]): Promise<[{ [char: string]: { view: boolean, create: boolean, edit: boolean, delete: boolean } } | null, string | null]> => {
+    const permissionRef = collection(db, 'permissions');
+    let permissions: { [char: string]: { view: boolean, create: boolean, edit: boolean, delete: boolean } } = {};
+    try {
+        const snap = await getDocs(permissionRef);
+        snap.docs.forEach(d => {
+            if (roles.includes(d.id)) {
+                const rolePermissions: { [char: string]: { view: boolean, create: boolean, edit: boolean, delete: boolean } } = d.data();
+                Object.keys(rolePermissions).forEach(key => {
+                    permissions[key] = {
+                        view: permissions[key]?.view ? true : rolePermissions[key].view,
+                        create: permissions[key]?.create ? true : rolePermissions[key].create,
+                        edit: permissions[key]?.edit ? true : rolePermissions[key].edit,
+                        delete: permissions[key]?.delete ? true : rolePermissions[key].delete
+                    }
+                })
+            };
+        });
+        return [permissions, null];
+    } catch (err: any) {
+        return [null, "Error while retrieving user permissions" + err.message]
     }
 }
 
@@ -99,27 +179,49 @@ const constructUser = (user: User) => {
     return signedInUser;
 };
 
-
-
-export const getSharedUsers = async (id: string, userId: string): Promise<[AutocompleteOption[] | null, string | null]> => {
-    const resultColRef = collection(db, 'results');
-    const resultQuery = query(resultColRef, where('compositions', 'array-contains', id), orderBy('displayName'));
+export const getSharedUsers = async (composition: IComposition): Promise<[AutocompleteOption[] | null, string | null]> => {
     try {
-        const snap = await getDocs(resultQuery);
-        if (snap.empty) {
-            return [null, null];
+        const userIds: UserOrigin[] = composition.sharedUsers?.map(su => { return { id: su, origin: '' } }) || [];
+        for (const ref of composition.groups || []) {
+            const snap = await getDoc(ref);
+            const group = snap.data() as IGroup;
+            group.students?.forEach(student => {
+                if (!userIds.map(u => u.id).includes(student.id)) userIds.push({id: student.id, origin: group.name});
+            })
         }
-        const labels = snap.docs.map(d => {
-            return { id: d.id, label: d.data().displayName } as AutocompleteOption;
-        });
-        const ownLabelIndex = labels.findIndex(l => l.id === userId);
-        if (ownLabelIndex > -1) labels.splice(ownLabelIndex, 1);
-        return [labels, null];
+        const limit = 10;
+        const userColRef = collection(db, 'users');
+        const labels: AutocompleteOption[] = [];
+        while (userIds.length) {
+            const usersQuery = query(userColRef, where('uid', 'in', userIds.slice(0, limit).map(u => u.id)));
+            const usersSnap = await getDocs(usersQuery);
+            const batch = usersSnap.docs.map((doc: any) => {
+                const index = userIds.findIndex(u => u.id === doc.id);
+                const origin = index > -1 ? userIds[index].origin : "";
+                const originAdd = origin ? origin + " - " : ""
+                const name =  doc.data().displayName || "Anonymous user";
+                const label = originAdd + name;
+                return { id: doc.id, label } as AutocompleteOption;
+            });
+            labels.push(...batch);
+            userIds.splice(0, limit);
+        }
+        return [labels.sort((a,b) => {return a.label.localeCompare(b.label)}), null];
     } catch (e: any) {
         return [null, e.message as string];
     }
 }
 
+
+export const getStudentGroupReferences = async (userId: string | undefined, organizationId: string | undefined) : Promise<[DocumentReference[], string | null]> => {
+    if(!userId || !organizationId) return [[], "Not enough information to retrieve student groups"];
+    const groupColRef = collection(db, "organizations/" + organizationId + "/groups");
+    const studentRef = doc(db, "users/" + userId);
+    const groupQuery = query(groupColRef, where("students", "array-contains", studentRef));
+    const snap = await getDocs(groupQuery);
+    const refs = snap.docs.map(doc => doc.ref);
+    return [refs, null];
+}
 
 export const saveUserResults = async (userId: string | undefined, treeId: string, compositionId: string | undefined, skills: SavedDataType, progress: number) => {
     if (!userId || !compositionId) return "Not enough information to store results";
@@ -210,10 +312,10 @@ export const getUserResults = async (userId: string): Promise<[IResult | null, s
     const docRef = doc(db, 'results', userId);
     try {
         const snap = await getDoc(docRef);
-        if(!snap.exists) return [null, "No result record found"];
-        const result = {id: snap.id, ...snap.data()} as IResult;
+        if (!snap.exists) return [null, "No result record found"];
+        const result = { id: snap.id, ...snap.data() } as IResult;
         return [result, null];
-    } catch(err: any) {
+    } catch (err: any) {
         return [null, err.message as string];
     }
 }

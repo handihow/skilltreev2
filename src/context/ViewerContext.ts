@@ -7,7 +7,7 @@ import { IEvent } from '../types/ievent.type';
 import { ILabel } from '../types/ilabel.type';
 
 type ViewerSettings = {
-    mode: "editor" | "teacher" | "student" | "initializing", 
+    mode: "editor" | "instructor" | "student" | "initializing", 
     composition: IComposition | null,
     evaluationModel: IEvaluationModel | null,
     selectedUser: AutocompleteOption | null,

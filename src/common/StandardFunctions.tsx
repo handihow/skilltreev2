@@ -1,4 +1,4 @@
-import { SavedDataType } from "beautiful-skill-tree";
+import { SavedDataType } from "../widgets/BST/models/index";
 import { IComposition } from "../types/icomposition.type";
 import { IEvaluationModel } from "../types/ievaluation.model.type";
 import { IEvaluation } from "../types/ievaluation.type";

@@ -7,6 +7,8 @@ import { IComposition } from "../types/icomposition.type";
 import { ISkilltree } from "../types/iskilltree.type";
 import { IResult } from "../types/iresult.type";
 import { ISkilltreeResult } from "../types/skilltree.result.model";
+import { getStudentGroupReferences } from "./user.service";
+import { IUser } from "../types/iuser.type";
 
 export const getComposition = async (id: string): Promise<[IComposition | null, string | null]> => {
     const compositionRef = doc(db, 'compositions/' + id);
@@ -251,7 +253,7 @@ export const deleteSkillsOfSkilltree = async (skilltreeId: string) => {
 }
 
 
-export const getCompositionSkillCount = async (compositionId: string, userId: string) : Promise<[number, number, string | null]> => {
+export const getCompositionSkillCount = async (compositionId: string, userId: string): Promise<[number, number, string | null]> => {
     try {
         const skillsColRef = collectionGroup(db, 'skills');
         const skillQuery = query(skillsColRef, where("composition", "==", compositionId), orderBy("order", "asc"));
@@ -267,9 +269,31 @@ export const getCompositionSkillCount = async (compositionId: string, userId: st
             completedCount += completed;
         }
         return [skillCount, completedCount, null];
-    } catch(e: any) {
+    } catch (e: any) {
         return [0, 0, e.message]
     }
-    
+
 }
 
+export const getSharedCompositionIds = async (userId: string): Promise<[string[], string | null]> => {
+    const skillTreeColRef = collection(db, 'compositions');
+    const skillTreeQuery = query(skillTreeColRef, where("sharedUsers", "array-contains", userId), orderBy("title", "asc"));
+    try {
+        const snap = await getDocs(skillTreeQuery);
+        const ids = snap.docs.map(d => d.id);
+        const userRef = doc(db, "users/" + userId);
+        const userSnap = await getDoc(userRef);
+        const user = userSnap.data() as IUser;
+        if(user.organizations && user.organizations[0]) {
+            const [refs, _error] = await getStudentGroupReferences(userId, user.organizations[0].id);
+            const skillTreeGroupQuery = query(skillTreeColRef, where("groups", "array-contains-any", refs), orderBy("title", "desc"));
+            const snap2 = await getDocs(skillTreeGroupQuery);
+            snap2.docs.forEach(doc => {
+                ids.push(doc.id);
+            })
+        }
+        return [ids, null]
+    } catch (err: any) {
+        return [[], err.message as string];
+    }
+}

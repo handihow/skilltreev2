@@ -10,7 +10,7 @@ export type IEvent = {
     draggable?: boolean;
     allDay?: boolean;
     students?: any;
-    teacher?: any;
+    instructor?: any;
     composition?: any;
     skilltree?: any;
     skill?: any;

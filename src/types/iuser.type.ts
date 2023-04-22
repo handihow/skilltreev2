@@ -4,7 +4,7 @@ export type IUser = {
     email: string;
     displayName?: string;
     photoURL?: string;
-    emailVerified: boolean;
+    emailVerified?: boolean;
     standardFeedback?: string;
     hostedDomain?: string;
     provider?: string;

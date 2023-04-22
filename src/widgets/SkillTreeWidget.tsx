@@ -1,6 +1,6 @@
 import { CircularProgress } from "@mui/material";
-import { SavedDataType, SkillTree } from "beautiful-skill-tree";
-import { collectionGroup, query, where, orderBy, onSnapshot, doc, getDoc, QuerySnapshot, Unsubscribe } from "firebase/firestore";
+import { SavedDataType, SkillTree } from "./BST/index";
+import { collectionGroup, query, where, orderBy, onSnapshot, doc, QuerySnapshot, Unsubscribe } from "firebase/firestore";
 import { getDownloadURL, ref } from "firebase/storage";
 import { useSnackbarController } from "firecms";
 import { useContext, useEffect, useState } from "react";

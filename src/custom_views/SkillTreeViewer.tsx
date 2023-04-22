@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-    SkillTreeGroup,
-    SkillProvider,
-    SavedDataType,
-} from "beautiful-skill-tree";
+
 import {
     Autocomplete,
     Box,
@@ -17,7 +13,7 @@ import {
     Typography,
 } from "@mui/material";
 import {
-    useAuthController, useSideEntityController, useSnackbarController, useStorageSource,
+    useAuthController, useModeController, useSideEntityController, useSnackbarController, useStorageSource,
 } from "firecms";
 import { useNavigate, useParams } from "react-router";
 import { AutocompleteOption } from "../types/autoCompleteOption.type";
@@ -34,7 +30,8 @@ import { collection, onSnapshot, query, Unsubscribe, where } from "firebase/fire
 import { createDocRef, db } from "../services/firestore";
 import { IEvaluation } from "../types/ievaluation.type";
 import { IEvent } from "../types/ievent.type";
-import { buildUsersCollection } from "../collections/user_collection";
+import { buildUsersCollection } from "../collections/user/user_collection";
+import { SavedDataType, SkillProvider, SkillTreeGroup } from "../widgets/BST";
 
 export function SkillTreeViewer() {
     // hook to display custom snackbars
@@ -43,6 +40,7 @@ export function SkillTreeViewer() {
     // hook to do operations related to authentication
     const authController = useAuthController();
     const storageSource = useStorageSource();
+    const modeController = useModeController();
     const sideEntityController = useSideEntityController();
 
     const initialList: ISkilltree[] = []
@@ -90,7 +88,7 @@ export function SkillTreeViewer() {
         }
         const [skilltrees, error3] = await getCompositionSkilltrees(id);
         if (error3) return handleError(error3);
-        const [labels, error4] = await getSharedUsers(id, authController.user.uid);
+        const [labels, error4] = await getSharedUsers(composition);
         if (error4) return handleError(error4);
         if (labels?.length) {
             setUsers([...labels]);
@@ -179,7 +177,7 @@ export function SkillTreeViewer() {
         sideEntityController.open({
             entityId: selectedUser?.id,
             path: "users",
-            collection: buildUsersCollection("teacher", undefined, composition?.id)
+            collection: buildUsersCollection("instructor", undefined, composition?.id)
         })
     }
 
@@ -202,7 +200,7 @@ export function SkillTreeViewer() {
                 }}>
                 {isLoading ? <CircularProgress /> :
                     <ViewerContext.Provider value={{
-                        mode: isAdmin ? "teacher" : "student",
+                        mode: isAdmin ? "instructor" : "student",
                         composition,
                         evaluationModel,
                         selectedUser,
@@ -248,12 +246,15 @@ export function SkillTreeViewer() {
                                                     alertWarning="Are you sure that you want to reset the completion status of all skills?"
                                                     btnColor="error"
                                                 />}
-                                                <Button aria-label="delete" size="small" onClick={() => isAdmin ? navigate("/own-skilltrees") : navigate("/shared-skilltrees")}>
+                                                <Button color={modeController.mode === "dark" ? "secondary" : "primary"}
+                                                    aria-label="delete" size="small" onClick={() => isAdmin ? navigate("/own-skilltrees") : navigate("/shared-skilltrees")}>
                                                     Back
                                                 </Button>
-                                                {isAdmin  && selectedUser && <Button onClick={openUserRecord}>User record</Button>}
+                                                {isAdmin && selectedUser && <Button color={modeController.mode === "dark" ? "secondary" : "primary"}
+                                                    onClick={openUserRecord}>User record</Button>}
                                                 {composition?.pendingApprovalUsers?.length && composition.pendingApprovalUsers.length > 0 ?
-                                                    <Button onClick={() => navigate("/share_requests/" + id)}>Approvals</Button> : <React.Fragment></React.Fragment>}
+                                                    <Button color={modeController.mode === "dark" ? "secondary" : "primary"}
+                                                        onClick={() => navigate("/share_requests/" + id)}>Approvals</Button> : <React.Fragment></React.Fragment>}
                                             </CardActions>
                                         </Card>
                                         {skilltreesList.map((skilltree) => (

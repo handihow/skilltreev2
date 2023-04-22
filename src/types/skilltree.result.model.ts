@@ -1,4 +1,4 @@
-import { SavedDataType } from "beautiful-skill-tree";
+import { SavedDataType } from "../widgets/BST/models/index";
 
 export type ISkilltreeResult = {
     id: string,

@@ -163,7 +163,7 @@ export default function SkillContent(props: {
                     ></AlertDialog>
                 </ButtonGroup>
             }
-            {content.mode === "teacher" &&
+            {content.mode === "instructor" &&
                 <ButtonGroup variant="contained" size="small" aria-label="contained small button group">
                     {isGradedSkill(content.composition, skill) && <Button aria-label="grade" onClick={gradeSkill} color="primary">
                         +grade

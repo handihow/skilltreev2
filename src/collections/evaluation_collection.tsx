@@ -18,7 +18,7 @@ import { IEvaluation } from "../types/ievaluation.type";
 export function buildEvaluationsCollection(
     path: "evaluations" | "history",
     evaluationModel?: IEvaluationModel,
-    teacherId?: string,
+    instructorId?: string,
     studentId?: string,
     compositionId?: string,
     skilltreeId?: string,
@@ -34,11 +34,11 @@ export function buildEvaluationsCollection(
         }) => {
             // return the updated values
             if (status === "new") {
-                if(!skillId || !evaluationModel?.id || !studentId || !teacherId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
+                if(!skillId || !evaluationModel?.id || !studentId || !instructorId || ! compositionId || !skilltreeId) throw new Error('Missing necessary information');
                 const [path, error] = await getSkillPath(skillId);
                 if(error || !path) throw new Error("Missing path info: " + error);
                 values.student = new EntityReference(studentId, "users");
-                values.teacher = new EntityReference(teacherId, "users");
+                values.instructor = new EntityReference(instructorId, "users");
                 values.composition = new EntityReference(compositionId, "compositions");
                 values.skilltree = new EntityReference(skilltreeId, "compositions/" + compositionId + "/skilltrees");
                 const split = path.split("/");
@@ -173,7 +173,7 @@ export function buildEvaluationsCollection(
             previewProperties: ["displayName", "email"],
             readOnly: true
         };
-        properties.teacher = {
+        properties.instructor = {
             name: "Teacher",
             dataType: "reference",
             path: "users",
@@ -220,18 +220,21 @@ export function buildEvaluationsCollection(
 
     return buildCollection<IEvaluation>({
         name: path === "evaluations" ? "Evaluations" : "History",
-        description: path === "evaluations" ? "Manage evaluations" : undefined,
+        description: "Evaluations of skills by instructor",
         singularName: path === "evaluations" ? "Evaluation" : "History",
         path,
+        hideIdFromCollection: true,
+        hideIdFromForm: true,
+        alias: path === "history" ? undefined : evaluationModel ? "evaluate" : "evaluations",
         defaultSize: "s",
-        group: "Grades",
+        group: "Administration",
         icon: "Grading",
         subcollections,
         permissions: ({ authController }) => ({
-            edit: !authController.extra?.roles?.includes('student') && path !== "history",
-            create: false,
+            edit: path === "history" ? false : authController.extra?.permissions.evaluations.edit,
+            create: path === "history" ? false : authController.extra?.permissions.evaluations.create,
             // we have created the roles object in the navigation builder
-            delete: authController.extra?.roles?.includes('super')
+            delete: path === "history" ? false :  authController.extra?.permissions.evaluations.delete
         }),
         properties,
         callbacks: evaluationCallbacks
