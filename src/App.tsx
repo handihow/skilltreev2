@@ -5,7 +5,9 @@ import {
     Authenticator,
     CMSView,
     EntityCollection,
+    EntityCollectionsBuilder,
     FirebaseCMSApp,
+    buildCollection,
 } from "firecms";
 
 import { loadFonts } from "./services/fonts";
@@ -131,7 +133,46 @@ export default function App() {
         </Tooltip>
     );
 
-    const [collections, setCollections] = useState<EntityCollection[]>([]);
+    const collectionsBuilder: EntityCollectionsBuilder = useCallback(async ({
+        user,
+        authController,
+        dataSource
+    }) => {
+        console.log('building collections');
+        const {extra: {permissions, organization, roles} = {}} = authController;
+        if(!permissions) return [];
+        if (user && roles.includes("super") && organization) {
+            return [
+                buildEvaluationModelCollection(true),
+                buildEvaluationsCollection("evaluations"),
+                buildEventsCollection("table"),
+                buildCommentsCollection("table"),
+                buildGroupCollection(organization),
+                buildOrganizationCollection(permissions?.organizations?.view || false),
+                permissionsCollection,
+                buildShareRequestCollection("admin", user),
+                buildAdminCompositionsCollection(),
+                buildUsersCollection("admin"),
+            ]
+        } else if (roles.includes("admin") && organization) {
+            return [
+                buildEvaluationModelCollection(true),
+                buildGroupCollection(organization),
+                buildOrganizationCollection(permissions?.organizations?.view || false),
+                buildAdminCompositionsCollection(organization),
+                buildUsersCollection("admin", organization),
+            ]
+        } else if (roles.includes("instructor") && organization) {
+            return [
+                buildEvaluationModelCollection(permissions?.evaluation_models?.view || false),
+                buildOrganizationCollection(permissions?.organizations?.view || false),
+                buildUsersCollection("instructor", organization)]
+        }
+        return [
+            buildEvaluationModelCollection(permissions?.evaluation_models?.view || false),
+            buildOrganizationCollection(permissions?.organizations?.view || false)]
+
+    }, []);
 
     const myAuthenticator: Authenticator<FirebaseUser> = useCallback(async ({
         user,
@@ -144,50 +185,18 @@ export default function App() {
 
         console.log("Allowing access to", user?.email);
         const error = await updateUser(user);
-        if(error) throw Error(error);
+        if (error) throw Error(error);
         const [roles, error1] = await getUserRoles(user?.uid || "")
-        if(error1) throw Error(error1)
+        if (error1) throw Error(error1)
         const [organization, error2] = await getUserOrganization(user?.uid || "")
-        if(error2) throw Error(error2)
+        if (error2) throw Error(error2)
         const providerIds = user?.providerData.map(provider => provider.providerId);
         const [permissions, error3] = await getUserPermissions(roles ? roles : ["instructor"]);
-        if(error3) throw Error(error3)
-        authController.setExtra({roles, organization, providerIds, permissions});
-        console.log(permissions);
-        if(roles && roles.includes("super") && user) {
-            setCollections([
-                buildEvaluationModelCollection(true), 
-                buildEvaluationsCollection("evaluations"),
-                buildEventsCollection("table"),
-                buildCommentsCollection("table"),
-                buildGroupCollection(organization),
-                buildOrganizationCollection(permissions?.organizations?.view || false),
-                permissionsCollection,
-                buildShareRequestCollection("admin", user),
-                buildAdminCompositionsCollection(), 
-                buildUsersCollection("admin"),
-            ])
-        } else if(roles && roles.includes("admin") && organization){
-            setCollections([
-                buildEvaluationModelCollection(true),
-                buildGroupCollection(organization),
-                buildOrganizationCollection(permissions?.organizations?.view || false),
-                buildAdminCompositionsCollection(organization), 
-                buildUsersCollection("admin", organization),
-            ])
-        } else if(roles && roles.includes("instructor") && organization){
-            setCollections([
-                buildEvaluationModelCollection(permissions?.evaluation_models?.view || false), 
-                buildOrganizationCollection(permissions?.organizations?.view || false),
-                buildUsersCollection("instructor", organization)])
-        } else {
-            setCollections([
-                buildEvaluationModelCollection(permissions?.evaluation_models?.view || false), 
-                buildOrganizationCollection(permissions?.organizations?.view || false)])
-        }
-        if(roles && roles.includes("student")){
+        if (error3) throw Error(error3)
+        authController.setExtra({ roles, organization, providerIds, permissions });
+        if (roles && roles.includes("student")) {
             customViews.shift();
-            customViews.shift(); 
+            customViews.shift();
             customViews.push(
                 {
                     path: "my-schedule",
@@ -207,6 +216,7 @@ export default function App() {
                 },
             )
         }
+
         return true;
     }, []);
 
@@ -214,7 +224,7 @@ export default function App() {
         name={"SkillTree"}
         authentication={myAuthenticator}
         views={customViews}
-        collections={collections} 
+        collections={collectionsBuilder}
         firebaseConfig={firebaseConfig}
         signInOptions={['google.com', 'microsoft.com', 'password', 'anonymous']}
         LoginView={CustomLoginView}

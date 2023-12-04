@@ -33,20 +33,22 @@ export function SkillTreeWidget({
     }
 
     const transformSkills = async (snap: QuerySnapshot) => {
-        const skills: ISkill[] = [];
-        for (const doc of snap.docs) {
+        const skills: ISkill[] = await Promise.all(snap.docs.map(async doc => {
             const skill: ISkill = {
                 parent: doc.ref.path.split("/"),
                 path: doc.ref.path,
                 ...(doc.data() as ISkill),
             };
+
             if (skill.image) {
                 const resized = skill.image.split(".")[0] + "_128x128." + skill.image.split(".")[1];
                 const reference = ref(storage, resized);
                 skill.icon = await getDownloadURL(reference);
             }
-            skills.push(skill);
-        }
+
+            return skill;
+        }));
+
         return skills;
     }
 
